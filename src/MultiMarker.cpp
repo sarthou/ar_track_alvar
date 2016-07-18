@@ -105,7 +105,7 @@ bool MultiMarker::SaveText(const char* fname) {
 		{
 			CvPoint3D64f X = pointcloud[pointcloud_index(marker_indices[i], j)];
 			file_op<<X.x<<" "<<X.y<<" "<<X.z<<endl;
-			
+
 		}
 	file_op.close();
 
@@ -131,6 +131,7 @@ bool MultiMarker::LoadXML(const char* fname) {
 
 	int n_markers;
 	if (xml_root->QueryIntAttribute("markers", &n_markers) != TIXML_SUCCESS) return false;
+    if (xml_root->QueryIntAttribute("size", &tag_size) != TIXML_SUCCESS) return false;
 
 	pointcloud.clear();
 	marker_indices.resize(n_markers);
@@ -236,8 +237,8 @@ void MultiMarker::PointCloudCorners3d(double edge_length, Pose &pose, CvPoint3D6
 		// TODO: This should be exactly the same as in Marker class.
 		//       Should we get the values from there somehow?
 		double X_data[4] = {0, 0, 0, 1};
-		if (j == 0) { 
-			int zzzz=2;			
+		if (j == 0) {
+			int zzzz=2;
 			//X_data[0] = -0.5*edge_length;
 			//X_data[1] = -0.5*edge_length;
 		} else if (j == 1) {

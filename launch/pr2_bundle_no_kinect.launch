@@ -1,13 +1,26 @@
 <launch>
-	<arg name="marker_size" default="4.4" />
+	<arg name="marker_size" default="5" />
 	<arg name="max_new_marker_error" default="0.08" />
 	<arg name="max_track_error" default="0.2" />
         
-	<arg name="cam_image_topic" default="/wide_stereo/left/image_color" />
-	<arg name="cam_info_topic" default="/wide_stereo/left/camera_info" />
+	<arg name="cam_image_topic" default="/narrow_stereo/left/image_color" />
+	<arg name="cam_info_topic" default="/narrow_stereo/left/camera_info" />	
         
-	<arg name="output_frame" default="/torso_lift_link" />
-	<arg name="bundle_files" default="$(find ar_track_alvar)/bundles/truthTableLeg.xml $(find ar_track_alvar)/bundles/table_8_9_10.xml" />
+        
+	<arg name="output_frame" default="/base_link" />
+	<arg name="max_frequency" default="10" />
+
+	<arg name="bundle_files" default=" 
+$(find ar_track_alvar)/bundles/MarkerData_1_2_3_4_5_6.xml
+$(find ar_track_alvar)/bundles/MarkerData_10.xml  
+$(find ar_track_alvar)/bundles/MarkerData_11.xml
+$(find ar_track_alvar)/bundles/MarkerData_12.xml 
+$(find ar_track_alvar)/bundles/MarkerData_13_14_15_16_17_18.xml
+$(find ar_track_alvar)/bundles/MarkerData_25_26_27_28_29_30.xml
+$(find ar_track_alvar)/bundles/MarkerData_31_32_33_34_35_36.xml
+$(find ar_track_alvar)/bundles/MarkerData_37_38_39_40_41_42.xml
+$(find ar_track_alvar)/bundles/TABLE_4.xml 
+"/>
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg bundle_files)" />
 </launch>

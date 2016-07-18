@@ -46,6 +46,11 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/image_encodings.h>
+#include <map>
+#include <string.h>
+#include <dynamic_reconfigure/server.h>
+#include <ar_track_alvar/ParamsConfig.h>
+#include <std_msgs/Bool.h>
 
 using namespace alvar;
 using namespace std;
@@ -67,17 +72,24 @@ MultiMarkerBundle **multi_marker_bundles=NULL;
 Pose *bundlePoses;
 int *master_id;
 bool *bundles_seen;
-std::vector<int> *bundle_indices; 	
-bool init = true;  
+std::vector<int> *bundle_indices;
+bool init = true;
 
+bool enableSwitched = false;
+bool enabled = true;
+double max_frequency;
 double marker_size;
 double max_new_marker_error;
 double max_track_error;
-std::string cam_image_topic; 
-std::string cam_info_topic; 
+std::string cam_image_topic;
+std::string cam_info_topic;
 std::string output_frame;
-int n_bundles = 0;   
+int n_bundles = 0;
+std::map<int, std::string> config;
 
+void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level);
+void enableCallback(const std_msgs::BoolConstPtr& msg);
+void ReadConfig (std::map<int,std::string> & config);
 void GetMultiMarkerPoses(IplImage *image);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker);
@@ -88,10 +100,15 @@ void GetMultiMarkerPoses(IplImage *image) {
 
   if (marker_detector.Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true)){
     for(int i=0; i<n_bundles; i++)
+    {
+      //marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
       multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
-    
+    }
+
     if(marker_detector.DetectAdditional(image, cam, false) > 0){
-      for(int i=0; i<n_bundles; i++){
+      for(int i=0; i<n_bundles; i++)
+      {
+        //marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
 	if ((multi_marker_bundles[i]->SetTrackMarkers(marker_detector, cam, bundlePoses[i], image) > 0))
 	  multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
       }
@@ -100,10 +117,10 @@ void GetMultiMarkerPoses(IplImage *image) {
 }
 
 
-// Given the pose of a marker, builds the appropriate ROS messages for later publishing 
+// Given the pose of a marker, builds the appropriate ROS messages for later publishing
 void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker){
   double px,py,pz,qx,qy,qz,qw;
-	
+
   px = p.translation[0]/100.0;
   py = p.translation[1]/100.0;
   pz = p.translation[2]/100.0;
@@ -143,9 +160,9 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   rvizMarker->scale.z = 0.2 * marker_size/100.0;
 
   if(type==MAIN_MARKER)
-    rvizMarker->ns = "main_shapes";
+    rvizMarker->ns = config[id];
   else
-    rvizMarker->ns = "basic_shapes";
+    rvizMarker->ns = "unknown object";
 
 
   rvizMarker->type = visualization_msgs::Marker::CUBE;
@@ -173,7 +190,7 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
 
   rvizMarker->lifetime = ros::Duration (1.0);
 
-  // Only publish the pose of the master tag in each bundle, since that's all we really care about aside from visualization 
+  // Only publish the pose of the master tag in each bundle, since that's all we really care about aside from visualization
   if(type==MAIN_MARKER){
     //Take the pose of the tag in the camera frame and convert to the output frame (usually torso_lift_link for the PR2)
     tf::Transform tagPoseOutput = CamToOutput * markerPose;
@@ -220,7 +237,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       // do this conversion here -jbinney
       IplImage ipl_image = cv_ptr_->image;
       GetMultiMarkerPoses(&ipl_image);
-		
+
       //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
       for(int i=0; i<n_bundles; i++)
 	bundles_seen[i] = false;
@@ -254,7 +271,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 	    }
 	  }
 	}
-			
+
       //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
       for(int i=0; i<n_bundles; i++)
 	{
@@ -274,17 +291,67 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
   }
 }
 
+//Load the configuration file (id <-> object)
+void ReadConfig (std::map<int,std::string> & config)
+{
+    FILE * pFile;
+    char buffer [100];
+    int i=0;
+    char name [30];
+    string path=(string)getenv("CATKIN_PATH");     //looking for Catkin path variable
+    path+="/src/ar_track_alvar/bundles/Map_ID_Name.txt";
 
+    ROS_INFO ("Opening Config file Map_ID_Name.txt");
+
+    if ((pFile = fopen (path.c_str(), "r")) == NULL)
+    {
+        ROS_INFO ("Can't find the file %s- quitting", path.c_str());
+        ROS_BREAK ();
+    }
+
+    while ( ! feof (pFile) )
+    {
+        if ( fgets (buffer , 100 , pFile) == NULL ) break;
+        if (sscanf (buffer, "%i	%s", &i, name) != 2)
+        {
+            fclose (pFile);
+            ROS_BREAK ();
+        }
+        config[i]=(string) name;
+    }
+    fclose (pFile);
+}
+
+void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level)
+{
+  ROS_INFO("AR tracker reconfigured: %s %.2f %.2f %.2f %.2f", config.enabled ? "ENABLED" : "DISABLED",
+           config.max_frequency, config.marker_size, config.max_new_marker_error, config.max_track_error);
+
+  enableSwitched = enabled != config.enabled;
+
+  enabled = config.enabled;
+  max_frequency = config.max_frequency;
+  marker_size = config.marker_size;
+  max_new_marker_error = config.max_new_marker_error;
+  max_track_error = config.max_track_error;
+}
+
+
+void enableCallback(const std_msgs::BoolConstPtr& msg)
+{
+    enableSwitched = enabled != msg->data;
+    enabled = msg->data;
+}
 
 int main(int argc, char *argv[])
 {
   ros::init (argc, argv, "marker_detect");
-  ros::NodeHandle n;
+  ros::NodeHandle n,  pn("~");
 
-  if(argc < 8){
+  if(argc < 9){
     std::cout << std::endl;
     cout << "Not enough arguments provided." << endl;
-    cout << "Usage: ./findMarkerBundles <marker size in cm> <max new marker error> <max track error> <cam image topic> <cam info topic> <output frame> <list of bundle XML files...>" << endl;
+    cout << "Usage: ./findMarkerBundles <marker size in cm> <max new marker error> <max track error> <cam image topic> <cam info topic> <output frame> <max frequency> <list of bundle XML files...>" << endl;
     std::cout << std::endl;
     return 0;
   }
@@ -296,50 +363,95 @@ int main(int argc, char *argv[])
   cam_image_topic = argv[4];
   cam_info_topic = argv[5];
   output_frame = argv[6];
+  max_frequency = atof(argv[7]);
   int n_args_before_list = 7;
   n_bundles = argc - n_args_before_list;
 
+  // Set dynamically configurable parameters so they don't get replaced by default values
+  pn.setParam("marker_size", marker_size);
+  pn.setParam("max_new_marker_error", max_new_marker_error);
+  pn.setParam("max_track_error", max_track_error);
+
   marker_detector.SetMarkerSize(marker_size);
-  multi_marker_bundles = new MultiMarkerBundle*[n_bundles];	
+  multi_marker_bundles = new MultiMarkerBundle*[n_bundles];
   bundlePoses = new Pose[n_bundles];
-  master_id = new int[n_bundles]; 
-  bundle_indices = new std::vector<int>[n_bundles]; 
-  bundles_seen = new bool[n_bundles]; 	
+  master_id = new int[n_bundles];
+  bundle_indices = new std::vector<int>[n_bundles];
+  bundles_seen = new bool[n_bundles];
 
   // Load the marker bundle XML files
-  for(int i=0; i<n_bundles; i++){	
-    bundlePoses[i].Reset();		
+  for(int i=0; i<n_bundles; i++){
+    bundlePoses[i].Reset();
     MultiMarker loadHelper;
     if(loadHelper.Load(argv[i + n_args_before_list], FILE_FORMAT_XML)){
       vector<int> id_vector = loadHelper.getIndices();
-      multi_marker_bundles[i] = new MultiMarkerBundle(id_vector);	
+      multi_marker_bundles[i] = new MultiMarkerBundle(id_vector);
       multi_marker_bundles[i]->Load(argv[i + n_args_before_list], FILE_FORMAT_XML);
       master_id[i] = multi_marker_bundles[i]->getMasterId();
       bundle_indices[i] = multi_marker_bundles[i]->getIndices();
     }
     else{
-      cout<<"Cannot load file "<< argv[i + n_args_before_list] << endl;	
+      cout<<"Cannot load file "<< argv[i + n_args_before_list] << endl;
       return 0;
-    }		
-  }  
+    }
+  }
+
+  //Load the configuration file (id <-> object)
+  ReadConfig(config);
+
+  // Prepare dynamic reconfiguration
+  dynamic_reconfigure::Server < ar_track_alvar::ParamsConfig > server;
+  dynamic_reconfigure::Server<ar_track_alvar::ParamsConfig>::CallbackType f;
+
+  f = boost::bind(&configCallback, _1, _2);
+  server.setCallback(f);
 
   // Set up camera, listeners, and broadcasters
   cam = new Camera(n, cam_info_topic);
   tf_listener = new tf::TransformListener(n);
   tf_broadcaster = new tf::TransformBroadcaster();
   arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
-  rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);
-	
+  rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("ar_visualization_marker", 0);
+
   //Give tf a chance to catch up before the camera callback starts asking for transforms
   ros::Duration(1.0).sleep();
-  ros::spinOnce();			
-	 
+  ros::spinOnce();
+
   //Subscribe to topics and set up callbacks
   ROS_INFO ("Subscribing to image topic");
   image_transport::ImageTransport it_(n);
-  cam_sub_ = it_.subscribe (cam_image_topic, 1, &getCapCallback);
 
-  ros::spin();
+
+  // Run at the configured rate, discarding pointcloud msgs if necessary
+  ros::Rate rate(max_frequency);
+
+  /// Subscriber for enable-topic so that a user can turn off the detection if it is not used without
+  /// having to use the reconfigure where he has to know all parameters
+  ros::Subscriber enable_sub_ = pn.subscribe("enable_detection", 1, &enableCallback);
+
+  enableSwitched = true;
+
+  while (ros::ok())
+  {
+      ros::spinOnce();
+      rate.sleep();
+
+      if (std::abs((rate.expectedCycleTime() - ros::Duration(1.0 / max_frequency)).toSec()) > 0.001)
+      {
+          // Change rate dynamically; if must be above 0, as 0 will provoke a segfault on next spinOnce
+          ROS_DEBUG("Changing frequency from %.2f to %.2f", 1.0 / rate.expectedCycleTime().toSec(), max_frequency);
+          rate = ros::Rate(max_frequency);
+        }
+
+      if (enableSwitched)
+      {
+          if (enabled)
+              cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
+          else
+              cam_sub_.shutdown();
+          enableSwitched = false;
+      }
+  }
 
   return 0;
 }

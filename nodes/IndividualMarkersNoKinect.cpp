@@ -69,8 +69,8 @@ double max_frequency;
 double marker_size;
 double max_new_marker_error;
 double max_track_error;
-std::string cam_image_topic; 
-std::string cam_info_topic; 
+std::string cam_image_topic;
+std::string cam_info_topic;
 std::string output_frame;
 
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
@@ -103,10 +103,10 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
             marker_detector.Detect(&ipl_image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true);
             arPoseMarkers_.markers.clear ();
-			for (size_t i=0; i<marker_detector.markers->size(); i++) 
+			for (size_t i=0; i<marker_detector.markers->size(); i++)
 			{
 				//Get the pose relative to the camera
-        		int id = (*(marker_detector.markers))[i].GetId(); 
+        		int id = (*(marker_detector.markers))[i].GetId();
 				Pose p = (*(marker_detector.markers))[i].pose;
 				double px = p.translation[0]/100.0;
 				double py = p.translation[1]/100.0;
@@ -131,7 +131,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
                     continue;
                 }
 
-				//Publish the transform from the camera to the marker		
+				//Publish the transform from the camera to the marker
 				std::string markerFrame = "ar_marker_";
 				std::stringstream out;
 				out << id;
@@ -139,7 +139,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 				markerFrame += id_string;
 				tf::StampedTransform camToMarker (t, image_msg->header.stamp, image_msg->header.frame_id, markerFrame.c_str());
     			tf_broadcaster->sendTransform(camToMarker);
-				
+
 				//Create the rviz visualization messages
 				tf::poseTFToMsg (markerPose, rvizMarker_.pose);
 				rvizMarker_.header.frame_id = image_msg->header.frame_id;
@@ -194,7 +194,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 				rvizMarker_.lifetime = ros::Duration (1.0);
 				rvizMarkerPub_.publish (rvizMarker_);
 
-				//Get the pose of the tag in the camera frame, then the output frame (usually torso)				
+				//Get the pose of the tag in the camera frame, then the output frame (usually torso)
 				tf::Transform tagPoseOutput = CamToOutput * markerPose;
 
 				//Create the pose marker messages
@@ -203,7 +203,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       			ar_pose_marker.header.frame_id = output_frame;
 			    ar_pose_marker.header.stamp = image_msg->header.stamp;
 			    ar_pose_marker.id = id;
-			    arPoseMarkers_.markers.push_back (ar_pose_marker);	
+			    arPoseMarkers_.markers.push_back (ar_pose_marker);
 			}
 			arMarkerPub_.publish (arPoseMarkers_);
 		}
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 {
 	ros::init (argc, argv, "marker_detect");
 	ros::NodeHandle n, pn("~");
-	
+
 	if(argc < 7){
 		std::cout << std::endl;
 		cout << "Not enough arguments provided." << endl;
@@ -271,8 +271,8 @@ int main(int argc, char *argv[])
 	tf_listener = new tf::TransformListener(n);
 	tf_broadcaster = new tf::TransformBroadcaster();
 	arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
-	rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);
-	
+	rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("ar_visualization_marker", 0);
+
   // Prepare dynamic reconfiguration
   dynamic_reconfigure::Server < ar_track_alvar::ParamsConfig > server;
   dynamic_reconfigure::Server<ar_track_alvar::ParamsConfig>::CallbackType f;
@@ -283,8 +283,8 @@ int main(int argc, char *argv[])
 	//Give tf a chance to catch up before the camera callback starts asking for transforms
   // It will also reconfigure parameters for the first time, setting the default values
 	ros::Duration(1.0).sleep();
-	ros::spinOnce();	
-	 
+	ros::spinOnce();
+
 	image_transport::ImageTransport it_(n);
 
   // Run at the configured rate, discarding pointcloud msgs if necessary
