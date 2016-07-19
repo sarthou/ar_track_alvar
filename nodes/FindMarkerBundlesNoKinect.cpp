@@ -51,6 +51,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
 #include <std_msgs/Bool.h>
+#include "ar_track_alvar/GetPositionAndOrientation.h"
 
 using namespace alvar;
 using namespace std;
@@ -76,7 +77,7 @@ std::vector<int> *bundle_indices;
 bool init = true;
 
 bool enableSwitched = false;
-bool enabled = true;
+bool enabled = false;
 double max_frequency;
 double marker_size;
 double max_new_marker_error;
@@ -87,6 +88,7 @@ std::string output_frame;
 int n_bundles = 0;
 std::map<int, std::string> config;
 
+bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res);
 void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level);
 void enableCallback(const std_msgs::BoolConstPtr& msg);
 void ReadConfig (std::map<int,std::string> & config);
@@ -101,14 +103,14 @@ void GetMultiMarkerPoses(IplImage *image) {
   if (marker_detector.Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true)){
     for(int i=0; i<n_bundles; i++)
     {
-      //marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
+      marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
       multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
     }
 
     if(marker_detector.DetectAdditional(image, cam, false) > 0){
       for(int i=0; i<n_bundles; i++)
       {
-        //marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
+        marker_detector.SetMarkerSize(multi_marker_bundles[i]->getTagSize());
 	if ((multi_marker_bundles[i]->SetTrackMarkers(marker_detector, cam, bundlePoses[i], image) > 0))
 	  multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
       }
@@ -291,6 +293,21 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
   }
 }
 
+
+bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res)
+{
+    //ros::NodeHandle n3;
+    //image_transport::ImageTransport it_(n3);
+    //cam_sub_ = it_.subscribe (cam_image_topic, 1, &getCapCallback);
+    //ros::Duration(1.0).sleep();
+    //res.marker=rvizMarkerForSrv;
+    //ros::spinOnce();
+    //cam_sub_.shutdown();
+    //res.marker.ns="coucou";
+    return true;
+}
+
+
 //Load the configuration file (id <-> object)
 void ReadConfig (std::map<int,std::string> & config)
 {
@@ -327,9 +344,8 @@ void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level)
   ROS_INFO("AR tracker reconfigured: %s %.2f %.2f %.2f %.2f", config.enabled ? "ENABLED" : "DISABLED",
            config.max_frequency, config.marker_size, config.max_new_marker_error, config.max_track_error);
 
-  enableSwitched = enabled != config.enabled;
-
-  enabled = config.enabled;
+  //enableSwitched = enabled != config.enabled;  //Useless if we begin with enabled=0;
+  //enabled = config.enabled;
   max_frequency = config.max_frequency;
   marker_size = config.marker_size;
   max_new_marker_error = config.max_new_marker_error;
@@ -346,7 +362,7 @@ void enableCallback(const std_msgs::BoolConstPtr& msg)
 int main(int argc, char *argv[])
 {
   ros::init (argc, argv, "marker_detect");
-  ros::NodeHandle n,  pn("~");
+  ros::NodeHandle n,  pn("~"), n2;
 
   if(argc < 9){
     std::cout << std::endl;
@@ -429,6 +445,11 @@ int main(int argc, char *argv[])
   /// having to use the reconfigure where he has to know all parameters
   ros::Subscriber enable_sub_ = pn.subscribe("enable_detection", 1, &enableCallback);
 
+      //Service for marker detection so that a user can turn the detection for a single picture
+  ros::ServiceServer service = n2.advertiseService("GetPositionAndOrientation", FindMarker);
+  ROS_INFO("Ready To Get Position And Orientation.");
+
+
   enableSwitched = true;
 
   while (ros::ok())
@@ -445,6 +466,9 @@ int main(int argc, char *argv[])
 
       if (enableSwitched)
       {
+        cout<<"enable switched = "<<enableSwitched<<endl;
+        cout<<"enabled = "<<enabled<<endl;
+
           if (enabled)
               cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
           else
