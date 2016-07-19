@@ -18,6 +18,7 @@ find_package(catkin COMPONENTS
         cv_bridge
         pcl_ros
         pcl_conversions
+	std_msgs
         message_generation
         ${MSG_DEPS}
         dynamic_reconfigure
@@ -27,6 +28,17 @@ find_package(catkin COMPONENTS
 find_package(Eigen REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(TinyXML REQUIRED)
+
+add_service_files(DIRECTORY srv
+	FILES 
+	GetPositionAndOrientation.srv)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  visualization_msgs
+)
 
 # dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/Params.cfg)

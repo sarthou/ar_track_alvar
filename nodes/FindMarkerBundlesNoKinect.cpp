@@ -76,7 +76,6 @@ bool *bundles_seen;
 std::vector<int> *bundle_indices;
 bool init = true;
 
-bool enableSwitched = false;
 bool enabled = false;
 double max_frequency;
 double marker_size;
@@ -211,6 +210,9 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
 //Callback to handle getting video frames and processing them
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
+    cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
+
+if (enabled) {
   //If we've already gotten the cam info, then go ahead
   if(cam->getCamInfo_){
     try{
@@ -231,7 +233,6 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       //Convert the image
       cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
-
       //Get the estimated pose of the main markers by using all the markers in each bundle
 
       // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
@@ -291,20 +292,107 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       ROS_ERROR ("Could not convert from '%s' to 'rgb8'.", image_msg->encoding.c_str ());
     }
   }
+  }
 }
 
 
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res)
 {
-    //ros::NodeHandle n3;
-    //image_transport::ImageTransport it_(n3);
-    //cam_sub_ = it_.subscribe (cam_image_topic, 1, &getCapCallback);
-    //ros::Duration(1.0).sleep();
-    //res.marker=rvizMarkerForSrv;
-    //ros::spinOnce();
-    //cam_sub_.shutdown();
-    //res.marker.ns="coucou";
-    return true;
+    int k=0;
+    sensor_msgs::ImagePtr image_msg =cv_ptr_->toImageMsg();
+
+    //If we've already gotten the cam info, then go ahead
+        if(cam->getCamInfo_)
+        {
+            try
+            {
+                //Get the transformation from the Camera to the output frame for this image capture
+                tf::StampedTransform CamToOutput;
+                try
+                {
+                    tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
+                    tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
+                }
+                catch (tf::TransformException ex)
+                {
+                    ROS_ERROR("%s",ex.what());
+                }
+                visualization_msgs::Marker rvizMarker;
+                ar_track_alvar_msgs::AlvarMarker ar_pose_marker;
+                arPoseMarkers_.markers.clear ();
+
+                //Convert the image
+                //cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
+                //Get the estimated pose of the main markers by using all the markers in each bundle
+
+                // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
+                // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
+                // do this conversion here -jbinney
+                IplImage ipl_image = cv_ptr_->image;
+                GetMultiMarkerPoses(&ipl_image);
+                //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
+                for(int i=0; i<n_bundles; i++)
+                    bundles_seen[i] = false;
+
+                for (size_t i=0; i<marker_detector.markers->size(); i++)
+                {
+                    int id = (*(marker_detector.markers))[i].GetId();
+
+                    // Draw if id is valid
+                    if(id >= 0)
+                    {
+
+                        //Mark the bundle that marker belongs to as "seen"
+                        for(int j=0; j<n_bundles; j++)
+                        {
+                            for(int k=0; k<bundle_indices[j].size(); k++)
+                            {
+                                if(bundle_indices[j][k] == id)
+                                {
+                                    bundles_seen[j] = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Don't draw if it is a master tag...we do this later, a bit differently
+                        bool should_draw = true;
+                        for(int i=0; i<n_bundles; i++)
+                        {
+                            if(id == master_id[i]) should_draw = false;
+                        }
+                        if(should_draw)
+                        {
+                            Pose p = (*(marker_detector.markers))[i].pose;
+                            makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                            rvizMarkerPub_.publish (rvizMarker);
+                            res.marker.push_back(rvizMarker);
+                            k++;
+                        }
+                    }
+                }
+                //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
+                for(int i=0; i<n_bundles; i++)
+                {
+                    if(bundles_seen[i] == true)
+                    {
+                        makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                        rvizMarkerPub_.publish (rvizMarker);
+                        arPoseMarkers_.markers.push_back (ar_pose_marker);
+                        k++;
+                    }
+                }
+                //Publish the marker messages
+                arMarkerPub_.publish (arPoseMarkers_);
+            }
+            catch (cv_bridge::Exception& e)
+            {
+                //ROS_ERROR ("Could not convert from '%s' to 'rgb8'.", BuffImage.encoding.c_str ());
+                ROS_ERROR ("Could not convert from '%s' to 'rgb8'.", image_msg->encoding.c_str ());
+
+            }
+        }
+return true;
 }
 
 
@@ -355,7 +443,6 @@ void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level)
 
 void enableCallback(const std_msgs::BoolConstPtr& msg)
 {
-    enableSwitched = enabled != msg->data;
     enabled = msg->data;
 }
 
@@ -447,10 +534,9 @@ int main(int argc, char *argv[])
 
       //Service for marker detection so that a user can turn the detection for a single picture
   ros::ServiceServer service = n2.advertiseService("GetPositionAndOrientation", FindMarker);
-  ROS_INFO("Ready To Get Position And Orientation.");
+  ROS_INFO("Ready To Get Position And Orientation");
 
-
-  enableSwitched = true;
+  cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
 
   while (ros::ok())
   {
@@ -462,19 +548,8 @@ int main(int argc, char *argv[])
           // Change rate dynamically; if must be above 0, as 0 will provoke a segfault on next spinOnce
           ROS_DEBUG("Changing frequency from %.2f to %.2f", 1.0 / rate.expectedCycleTime().toSec(), max_frequency);
           rate = ros::Rate(max_frequency);
-        }
-
-      if (enableSwitched)
-      {
-        cout<<"enable switched = "<<enableSwitched<<endl;
-        cout<<"enabled = "<<enabled<<endl;
-
-          if (enabled)
-              cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
-          else
-              cam_sub_.shutdown();
-          enableSwitched = false;
       }
+
   }
 
   return 0;
