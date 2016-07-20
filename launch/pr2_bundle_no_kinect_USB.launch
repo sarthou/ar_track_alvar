@@ -7,7 +7,7 @@
 	<arg name="cam_info_topic" default="/usb_cam/camera_info" />
         
         
-	<arg name="output_frame" default="/world" />
+	<arg name="output_frame" default="/usb_cam" />
 	<arg name="max_frequency" default="10" />
 
 	<arg name="bundle_files" default=" 
@@ -23,6 +23,16 @@ $(find ar_track_alvar)/bundles/TABLE_4.xml
 "/>
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg bundle_files)" />
+
+<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video0" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap"/>
+  </node>
+
 
 <node pkg="tf" type="static_transform_publisher" name="world_to_usbcam" 
     args="0 0 0.5 -1.57 0 -1.57 world usb_cam 10" />
