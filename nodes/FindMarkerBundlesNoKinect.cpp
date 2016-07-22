@@ -298,7 +298,6 @@ if (enabled) {
 
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res)
 {
-    int k=0;
     sensor_msgs::ImagePtr image_msg =cv_ptr_->toImageMsg();
 
     //If we've already gotten the cam info, then go ahead
@@ -366,8 +365,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                             Pose p = (*(marker_detector.markers))[i].pose;
                             makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
                             rvizMarkerPub_.publish (rvizMarker);
-                            res.marker.push_back(rvizMarker);
-                            k++;
+                            //res.marker.push_back(rvizMarker);  //We oly want to publish the main markers
                         }
                     }
                 }
@@ -379,7 +377,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                         makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
                         rvizMarkerPub_.publish (rvizMarker);
                         arPoseMarkers_.markers.push_back (ar_pose_marker);
-                        k++;
+                        res.marker.push_back(rvizMarker);
                     }
                 }
                 //Publish the marker messages
