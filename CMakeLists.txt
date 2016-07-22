@@ -24,6 +24,7 @@ find_package(catkin COMPONENTS
         dynamic_reconfigure
         cmake_modules
 	ar_track_alvar_msgs
+	ar_track_alvar_bundles
         REQUIRED)
 
 find_package(Eigen REQUIRED)
