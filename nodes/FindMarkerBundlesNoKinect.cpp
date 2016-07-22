@@ -401,8 +401,8 @@ void ReadConfig (std::map<int,std::string> & config)
     char buffer [100];
     int i=0;
     char name [30];
-    string path=(string)getenv("CATKIN_PATH");     //looking for Catkin path variable
-    path+="/src/ar_track_alvar/bundles/Map_ID_Name.txt";
+    std::string path = ros::package::getPath("ar_track_alvar_bundles");
+    path+="/bundles/Map_ID_Name.txt";
 
     ROS_INFO ("Opening Config file Map_ID_Name.txt");
 
