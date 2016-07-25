@@ -151,7 +151,8 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   }
 
   //Create the rviz visualization message
-  tf::poseTFToMsg (markerPose, rvizMarker->pose);
+  tf::Transform tagPoseOutput = CamToOutput * markerPose;
+  tf::poseTFToMsg (tagPoseOutput, rvizMarker->pose);
   rvizMarker->header.frame_id = image_msg->header.frame_id;
   rvizMarker->header.stamp = image_msg->header.stamp;
   rvizMarker->id = id;
