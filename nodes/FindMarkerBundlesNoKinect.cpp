@@ -529,6 +529,7 @@ int main(int argc, char *argv[])
 
   /// Subscriber for enable-topic so that a user can turn off the detection if it is not used without
   /// having to use the reconfigure where he has to know all parameters
+  ROS_INFO("Subscribing to enable_detection. Don't forget to publish on this topic if you want ar_track to publish the poses !");
   ros::Subscriber enable_sub_ = pn.subscribe("enable_detection", 1, &enableCallback);
 
       //Service for marker detection so that a user can turn the detection for a single picture
