@@ -26,6 +26,7 @@ $(find ar_track_alvar_bundles)/bundles/MarkerData_31_32_33_34_35_36.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_37_38_39_40_41_42.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_51_52.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_53_54.xml
+$(find ar_track_alvar_bundles)/bundles/MarkerData_55.xml
 "/>
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg bundle_files)" />
