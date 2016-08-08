@@ -83,6 +83,7 @@ double max_frequency;
 double marker_size;
 double max_new_marker_error;
 double max_track_error;
+int display_unknown_objects;
 std::string cam_image_topic;
 std::string cam_info_topic;
 std::string output_frame;
@@ -272,7 +273,10 @@ if (enabled) {
 	    }
 	    if(should_draw){
 	      Pose p = (*(marker_detector.markers))[i].pose;
-	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+	      if(display_unknown_objects==1)
+	      {
+                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+          }
 	      rvizMarkerPub_.publish (rvizMarker);
 	    }
 	  }
@@ -381,7 +385,10 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                         if(should_draw)
                         {
                             Pose p = (*(marker_detector.markers))[i].pose;
-                            makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                            if(display_unknown_objects==1)
+                            {
+                                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                            }
                             rvizMarkerPub_.publish (rvizMarker);
                             //res.marker.push_back(rvizMarker);  //We oly want to publish the main markers
                         }
@@ -467,10 +474,10 @@ int main(int argc, char *argv[])
   ros::init (argc, argv, "marker_detect");
   ros::NodeHandle n,  pn("~"), n2, n3;
 
-  if(argc < 9){
+  if(argc < 10){
     std::cout << std::endl;
     cout << "Not enough arguments provided." << endl;
-    cout << "Usage: ./findMarkerBundles <marker size in cm> <max new marker error> <max track error> <cam image topic> <cam info topic> <output frame> <max frequency> <list of bundle XML files...>" << endl;
+    cout << "Usage: ./findMarkerBundles <marker size in cm> <max new marker error> <max track error> <cam image topic> <cam info topic> <output frame> <max frequency> <display unknown objects> <list of bundle XML files...>" << endl;
     std::cout << std::endl;
     return 0;
   }
@@ -483,7 +490,8 @@ int main(int argc, char *argv[])
   cam_info_topic = argv[5];
   output_frame = argv[6];
   max_frequency = atof(argv[7]);
-  int n_args_before_list = 7;
+  display_unknown_objects = atof(argv[8]);
+  int n_args_before_list = 9;
   n_bundles = argc - n_args_before_list;
 
   // Set dynamically configurable parameters so they don't get replaced by default values
