@@ -65,7 +65,6 @@ using namespace std;
 Camera *cam;
 cv_bridge::CvImagePtr cv_ptr_;
 image_transport::Subscriber cam_sub_;
-ros::Publisher arMarkerPub_;
 ros::Publisher rvizMarkerPub_;
 ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
 tf::TransformListener *tf_listener;
@@ -96,7 +95,7 @@ void enableCallback(const std_msgs::BoolConstPtr& msg);
 void ReadConfig (std::map<int,std::string> & config);
 void GetMultiMarkerPoses(IplImage *image);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker);
+void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker);
 
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
@@ -122,7 +121,7 @@ void GetMultiMarkerPoses(IplImage *image) {
 
 
 // Given the pose of a marker, builds the appropriate ROS messages for later publishing
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker){
+void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker){
   double px,py,pz,qx,qy,qz,qw;
 
   px = p.translation[0]/100.0;
@@ -194,20 +193,6 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   }
 
   rvizMarker->lifetime = ros::Duration (1.0);
-
-  // Only publish the pose of the master tag in each bundle, since that's all we really care about aside from visualization
-  if(type==MAIN_MARKER){
-    //Take the pose of the tag in the camera frame and convert to the output frame (usually torso_lift_link for the PR2)
-    tf::Transform tagPoseOutput = CamToOutput * markerPose;
-
-    //Create the pose marker message
-    tf::poseTFToMsg (tagPoseOutput, ar_pose_marker->pose.pose);
-    ar_pose_marker->header.frame_id = output_frame;
-    ar_pose_marker->header.stamp = image_msg->header.stamp;
-    ar_pose_marker->id = id;
-  }
-  else
-    ar_pose_marker = NULL;
 }
 
 
@@ -231,9 +216,6 @@ if (enabled) {
       }
 
       visualization_msgs::Marker rvizMarker;
-      ar_track_alvar_msgs::AlvarMarker ar_pose_marker;
-      arPoseMarkers_.markers.clear ();
-
 
       //Convert the image
       cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
@@ -275,7 +257,7 @@ if (enabled) {
 	      Pose p = (*(marker_detector.markers))[i].pose;
 	      if(display_unknown_objects==1)
 	      {
-                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
           }
 	      rvizMarkerPub_.publish (rvizMarker);
 	    }
@@ -286,14 +268,11 @@ if (enabled) {
       for(int i=0; i<n_bundles; i++)
 	{
 	  if(bundles_seen[i] == true){
-	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
 	    rvizMarkerPub_.publish (rvizMarker);
-	    arPoseMarkers_.markers.push_back (ar_pose_marker);
 	  }
 	}
 
-      //Publish the marker messages
-      arMarkerPub_.publish (arPoseMarkers_);
     }
     catch (cv_bridge::Exception& e){
       ROS_ERROR ("Could not convert from '%s' to 'rgb8'.", image_msg->encoding.c_str ());
@@ -339,8 +318,6 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                     ROS_ERROR("%s",ex.what());
                 }
                 visualization_msgs::Marker rvizMarker;
-                ar_track_alvar_msgs::AlvarMarker ar_pose_marker;
-                arPoseMarkers_.markers.clear ();
 
                 //Convert the image
                 //cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
@@ -387,7 +364,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                             Pose p = (*(marker_detector.markers))[i].pose;
                             if(display_unknown_objects==1)
                             {
-                                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
                             }
                             rvizMarkerPub_.publish (rvizMarker);
                             //res.marker.push_back(rvizMarker);  //We oly want to publish the main markers
@@ -399,14 +376,12 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                 {
                     if(bundles_seen[i] == true)
                     {
-                        makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
+                        makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
                         rvizMarkerPub_.publish (rvizMarker);
-                        arPoseMarkers_.markers.push_back (ar_pose_marker);
                         res.marker.push_back(rvizMarker);
                     }
                 }
-                //Publish the marker messages
-                arMarkerPub_.publish (arPoseMarkers_);
+
             }
             catch (cv_bridge::Exception& e)
             {
@@ -537,7 +512,6 @@ int main(int argc, char *argv[])
   cam = new Camera(n, cam_info_topic);
   tf_listener = new tf::TransformListener(n);
   tf_broadcaster = new tf::TransformBroadcaster();
-  arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
   rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("ar_visualization_marker", 0);
 
   //Give tf a chance to catch up before the camera callback starts asking for transforms

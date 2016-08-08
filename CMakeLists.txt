@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ar_track_alvar)
 
 set(MSG_DEPS
-    ar_track_alvar_msgs
     std_msgs
     sensor_msgs
     geometry_msgs
@@ -23,7 +22,6 @@ find_package(catkin COMPONENTS
         ${MSG_DEPS}
         dynamic_reconfigure
         cmake_modules
-	ar_track_alvar_msgs
 	ar_track_alvar_bundles
         REQUIRED)
 
@@ -50,7 +48,6 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ar_track_alvar
   CATKIN_DEPENDS
-        ar_track_alvar_msgs
         std_msgs
         roscpp
         tf
