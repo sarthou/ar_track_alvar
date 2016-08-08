@@ -1,0 +1,4 @@
+string cam_topic
+string cam_info_topic
+---
+bool result

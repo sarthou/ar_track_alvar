@@ -52,6 +52,8 @@
 #include <ar_track_alvar/ParamsConfig.h>
 #include <std_msgs/Bool.h>
 #include "ar_track_alvar/GetPositionAndOrientation.h"
+#include "ar_track_alvar/SetCamTopic.h"
+
 
 using namespace alvar;
 using namespace std;
@@ -244,7 +246,7 @@ if (enabled) {
 
       //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
       for(int i=0; i<n_bundles; i++)
-	bundles_seen[i] = false;
+        bundles_seen[i] = false;
 
       for (size_t i=0; i<marker_detector.markers->size(); i++)
 	{
@@ -265,8 +267,8 @@ if (enabled) {
 
 	    // Don't draw if it is a master tag...we do this later, a bit differently
 	    bool should_draw = true;
-	    for(int i=0; i<n_bundles; i++){
-	      if(id == master_id[i]) should_draw = false;
+	    for(int k=0; k<n_bundles; k++){
+	      if(id == master_id[k]) should_draw = false;
 	    }
 	    if(should_draw){
 	      Pose p = (*(marker_detector.markers))[i].pose;
@@ -295,6 +297,21 @@ if (enabled) {
   }
   }
 }
+
+bool ChangeCam(ar_track_alvar::SetCamTopic::Request  &req, ar_track_alvar::SetCamTopic::Response &res, image_transport::ImageTransport &it_, ros::NodeHandle &n)
+{
+    ROS_INFO ("Subscribing to new image topic");
+    delete cam;
+    cam = new Camera(n, req.cam_info_topic);
+
+    cam_sub_.shutdown();
+    cam_sub_=it_.subscribe(req.cam_topic, 1, &getCapCallback);
+
+    res.result = true;
+    return true;
+}
+
+
 
 
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res)
@@ -357,9 +374,9 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
 
                         // Don't draw if it is a master tag...we do this later, a bit differently
                         bool should_draw = true;
-                        for(int i=0; i<n_bundles; i++)
+                        for(int k=0; k<n_bundles; k++)
                         {
-                            if(id == master_id[i]) should_draw = false;
+                            if(id == master_id[k]) should_draw = false;
                         }
                         if(should_draw)
                         {
@@ -448,7 +465,7 @@ void enableCallback(const std_msgs::BoolConstPtr& msg)
 int main(int argc, char *argv[])
 {
   ros::init (argc, argv, "marker_detect");
-  ros::NodeHandle n,  pn("~"), n2;
+  ros::NodeHandle n,  pn("~"), n2, n3;
 
   if(argc < 9){
     std::cout << std::endl;
@@ -522,6 +539,7 @@ int main(int argc, char *argv[])
   //Subscribe to topics and set up callbacks
   ROS_INFO ("Subscribing to image topic");
   image_transport::ImageTransport it_(n);
+  cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
 
 
   // Run at the configured rate, discarding pointcloud msgs if necessary
@@ -536,7 +554,11 @@ int main(int argc, char *argv[])
   ros::ServiceServer service = n2.advertiseService("GetPositionAndOrientation", FindMarker);
   ROS_INFO("Ready To Get Position And Orientation");
 
-  cam_sub_ = it_.subscribe(cam_image_topic, 1, &getCapCallback);
+      //Service for changing the xam topic during runtime
+  //ros::ServiceServer service2 = n3.advertiseService("SetCamTopic", ChangeCam);
+  ros::ServiceServer service2 = n3.advertiseService<ar_track_alvar::SetCamTopic::Request, ar_track_alvar::SetCamTopic::Response>("SetCamTopic", boost::bind(ChangeCam, _1, _2, it_, n));
+  ROS_INFO("Ready To Set Cam Topic");
+
 
   while (ros::ok())
   {

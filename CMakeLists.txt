@@ -33,7 +33,8 @@ find_package(TinyXML REQUIRED)
 
 add_service_files(DIRECTORY srv
 	FILES 
-	GetPositionAndOrientation.srv)
+	GetPositionAndOrientation.srv
+	SetCamTopic.srv)
 
 generate_messages(
   DEPENDENCIES
