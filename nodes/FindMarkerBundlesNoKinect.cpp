@@ -41,8 +41,6 @@
 #include "ar_track_alvar/MultiMarkerInitializer.h"
 #include "ar_track_alvar/Shared.h"
 #include <cv_bridge/cv_bridge.h>
-#include <ar_track_alvar_msgs/AlvarMarker.h>
-#include <ar_track_alvar_msgs/AlvarMarkers.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/image_encodings.h>
@@ -66,7 +64,6 @@ Camera *cam;
 cv_bridge::CvImagePtr cv_ptr_;
 image_transport::Subscriber cam_sub_;
 ros::Publisher rvizMarkerPub_;
-ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
 tf::TransformListener *tf_listener;
 tf::TransformBroadcaster *tf_broadcaster;
 MarkerDetector<MarkerData> marker_detector;
