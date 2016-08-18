@@ -362,9 +362,8 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                             if(display_unknown_objects==1)
                             {
                                 makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
+                                rvizMarkerPub_.publish (rvizMarker);
                             }
-                            rvizMarkerPub_.publish (rvizMarker);
-                            //res.marker.push_back(rvizMarker);  //We oly want to publish the main markers
                         }
                     }
                 }
