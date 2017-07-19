@@ -238,9 +238,8 @@ void MultiMarker::PointCloudCorners3d(double edge_length, Pose &pose, CvPoint3D6
 		//       Should we get the values from there somehow?
 		double X_data[4] = {0, 0, 0, 1};
 		if (j == 0) {
-			int zzzz=2;
-			//X_data[0] = -0.5*edge_length;
-			//X_data[1] = -0.5*edge_length;
+			X_data[0] = -0.5*edge_length;
+			X_data[1] = -0.5*edge_length;
 		} else if (j == 1) {
 			X_data[0] = +0.5*edge_length;
 			X_data[1] = -0.5*edge_length;

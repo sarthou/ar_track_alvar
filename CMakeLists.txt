@@ -30,7 +30,7 @@ find_package(OpenCV REQUIRED)
 find_package(TinyXML REQUIRED)
 
 add_service_files(DIRECTORY srv
-	FILES 
+	FILES
 	GetPositionAndOrientation.srv
 	SetCamTopic.srv)
 
@@ -64,7 +64,7 @@ catkin_package(
         dynamic_reconfigure
 )
 
-include_directories(include 
+include_directories(include
                     ${catkin_INCLUDE_DIRS}
                     ${OpenCV_INCLUDE_DIRS}
                     ${TinyXML_INCLUDE_DIRS}
@@ -132,6 +132,10 @@ add_dependencies(findMarkerBundlesNoKinect ${PROJECT_NAME}_gencpp ${GENCPP_DEPS}
 add_executable(createMarker src/SampleMarkerCreator.cpp)
 target_link_libraries(createMarker ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createMarker ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
+
+add_executable(createFlag src/SampleFlagCreator.cpp)
+target_link_libraries(createFlag ar_track_alvar ${catkin_LIBRARIES})
+add_dependencies(createFlag ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
 install(TARGETS ${ALVAR_TARGETS} ${KINECT_FILTERING_TARGETS}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
