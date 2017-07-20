@@ -61,6 +61,7 @@ bool MultiMarker::SaveXML(const char* fname) {
 
 	int n_markers = marker_indices.size();
 	xml_root->SetAttribute("markers", n_markers);
+	xml_root->SetAttribute("size", tag_size);
 
 	for(int i = 0; i < n_markers; ++i) {
 		TiXmlElement *xml_marker = new TiXmlElement("marker");
@@ -262,6 +263,7 @@ void MultiMarker::PointCloudCorners3d(double edge_length, Pose &pose, CvPoint3D6
 }
 
 void MultiMarker::PointCloudAdd(int marker_id, double edge_length, Pose &pose) {
+	tag_size = edge_length;
 	CvPoint3D64f corners[4];
 	PointCloudCorners3d(edge_length, pose, corners);
 	for(size_t j = 0; j < 4; ++j) {
