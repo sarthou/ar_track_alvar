@@ -251,12 +251,12 @@ if (enabled) {
 	      if(id == master_id[k]) should_draw = false;
 	    }
 	    if(should_draw){
-	      Pose p = (*(marker_detector.markers))[i].pose;
-	      if(display_unknown_objects==1)
-	      {
-                makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
-          }
-	      rvizMarkerPub_.publish (rvizMarker);
+        Pose p = (*(marker_detector.markers))[i].pose;
+        if(display_unknown_objects==1)
+          makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
+
+        if(image_msg->header.frame_id != "")
+          rvizMarkerPub_.publish (rvizMarker);
 	    }
 	  }
 	}
