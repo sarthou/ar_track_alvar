@@ -255,7 +255,7 @@ if (enabled) {
         if(display_unknown_objects==1)
           makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
 
-        if(image_msg->header.frame_id != "")
+        if(rvizMarker.header.frame_id != "")
           rvizMarkerPub_.publish (rvizMarker);
 	    }
 	  }
