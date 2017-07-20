@@ -1,4 +1,5 @@
 #include "ar_track_alvar/MultiMarker.h"
+#include "ar_track_alvar/color.h"
 #include "highgui.h"
 using namespace std;
 using namespace alvar;
@@ -18,6 +19,7 @@ struct State {
     int    content_res;
     double margin_res;
     bool   array;
+    unsigned char color;
 
     // MarkerData specific options
     MarkerData::MarkerContentType marker_data_content_type;
@@ -33,11 +35,13 @@ struct State {
           content_res(0),        // 0 uses default
           margin_res(0.0),       // 0.0 uses default (can be n*0.5)
           marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER),
-          marker_data_force_strong_hamming(false)
+          marker_data_force_strong_hamming(false),
+          color(0)
     {}
     ~State() {
         if (img) cvReleaseImage(&img);
     }
+
     void AddMarker(const char *id) {
         std::cout<<"ADDING MARKER "<<id<<std::endl;
 
@@ -60,6 +64,10 @@ struct State {
 
         md.ScaleMarkerToImage(img);
         cvResetImageROI(img);
+        IplImage* color_img = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,3);
+        cvCvtColor(img, color_img, CV_GRAY2RGB);
+        col::change_color(color_img, color);
+        img = color_img;
     }
 
     void Save() {
@@ -149,6 +157,19 @@ int main(int argc, char *argv[])
             st.posx=posx;
             st.posy=posy;
             st.posz=posz;
+            std::cout<<"  Colors :" << std::endl;
+            std::cout<<"  B - blue" << std::endl;
+            std::cout<<"  R - red" << std::endl;
+            std::cout<<"  G - green" << std::endl;
+            std::cout<<"  P - pink" << std::endl;
+            std::cout<<"  S - sky" << std::endl;
+            std::cout<<"  Y - yellow" << std::endl;
+            std::cout<<"  default - black :" << std::endl;
+            std::cout<<"  Marker color : "; std::flush(std::cout);
+            std::getline(std::cin, s); if (s.length() <= 0) s = " ";
+            col::color_t tmp_color = col::get_color(s[0]);
+            st.color = col::get_color(tmp_color);
+
             ss<<marker_id;
             st.AddMarker(ss.str().c_str());
 

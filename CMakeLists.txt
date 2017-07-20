@@ -103,7 +103,9 @@ add_library(ar_track_alvar
     src/Optimization.cpp
     src/MultiMarker.cpp
     src/MultiMarkerBundle.cpp
-    src/MultiMarkerInitializer.cpp)
+    src/MultiMarkerInitializer.cpp
+    src/color.cpp)
+
 target_link_libraries(ar_track_alvar ${OpenCV_LIBS} ${TinyXML_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(ar_track_alvar ${GENCPP_DEPS})
 
