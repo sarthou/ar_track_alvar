@@ -92,11 +92,11 @@ void print_tag()
   std::cout << "   ^   " << std::endl;
   std::cout << "   |   " << std::endl;
   std::cout << "#######" << std::endl;
-  std::cout << "#     #" << std::endl;
-  std::cout << "#     #" << std::endl;
+  std::cout << "#  #  #" << std::endl;
+  std::cout << "#  #  #" << std::endl;
   std::cout << "#     # --> positive side" << std::endl;
-  std::cout << "#  #  #" << std::endl;
-  std::cout << "#  #  #" << std::endl;
+  std::cout << "#     #" << std::endl;
+  std::cout << "#     #" << std::endl;
   std::cout << "#######" << std::endl;
   std::cout << std::endl;
 }
