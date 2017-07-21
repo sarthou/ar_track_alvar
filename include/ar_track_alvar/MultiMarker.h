@@ -144,6 +144,18 @@ public:
 	*/
 	void PointCloudAdd(int marker_id, double edge_length, Pose &pose);
 
+	/** \brief Translate all corner in 3D space
+		\param marker_id Id of the marker to be translate.
+		\param x,y,z Values of translation
+	*/
+	void PointCloudTranslate(int marker_id, double x, double y, double z);
+
+	/**\brief Rotate all corner in 3D space
+		\param marker_id Id of the marker to be rotate.
+		\param rot matrix of rotation
+	*/
+	void PointCloudRotate(int marker_id, int rot[9]);
+
 	/** \brief Copies the 3D point cloud from other multi marker object.
 	*/
 	void PointCloudCopy(const MultiMarker *m);

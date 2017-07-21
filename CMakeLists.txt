@@ -139,6 +139,10 @@ add_executable(createFlag src/SampleFlagCreator.cpp)
 target_link_libraries(createFlag ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createFlag ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
+add_executable(createCube src/SampleCubeCreator.cpp)
+target_link_libraries(createCube ar_track_alvar ${catkin_LIBRARIES})
+add_dependencies(createCube ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
+
 install(TARGETS ${ALVAR_TARGETS} ${KINECT_FILTERING_TARGETS}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

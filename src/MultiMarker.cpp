@@ -272,6 +272,50 @@ void MultiMarker::PointCloudAdd(int marker_id, double edge_length, Pose &pose) {
 	}
 }
 
+void MultiMarker::PointCloudTranslate(int marker_id, double x, double y, double z)
+{
+	for(size_t j = 0; j < 4; ++j)
+	{
+		pointcloud[pointcloud_index(marker_id, j)].x += x;
+		pointcloud[pointcloud_index(marker_id, j)].y += y;
+		pointcloud[pointcloud_index(marker_id, j)].z += z;
+	}
+}
+
+void MultiMarker::PointCloudRotate(int marker_id, int rot[9])
+{
+	std::map<int, CvPoint3D64f> tmp_pointcloud = pointcloud;
+	for(int src = 0; src < 3; src++)
+		for(int dest = 0; dest < 3; dest++)
+		{
+			int weight;
+			if(weight = rot[src*3 + dest])
+			{
+				double tmp[4];
+				for(size_t j = 0; j < 4; ++j)
+				{
+					if(src == 0)
+						tmp[j] = pointcloud[pointcloud_index(marker_id, j)].x;
+					else if(src == 1)
+						tmp[j] = pointcloud[pointcloud_index(marker_id, j)].y;
+					else if(src == 2)
+						tmp[j] = pointcloud[pointcloud_index(marker_id, j)].z;
+				}
+				for(size_t j = 0; j < 4; ++j)
+				{
+					if(dest == 0)
+						tmp_pointcloud[pointcloud_index(marker_id, j)].x = weight*tmp[j];
+					else if(dest == 1)
+						tmp_pointcloud[pointcloud_index(marker_id, j)].y = weight*tmp[j];
+					else if(dest == 2)
+						tmp_pointcloud[pointcloud_index(marker_id, j)].z = weight*tmp[j];
+				}
+			}
+		}
+
+	pointcloud = tmp_pointcloud;
+}
+
 void MultiMarker::PointCloudCopy(const MultiMarker *m) {
 	pointcloud.clear();
 	pointcloud = m->pointcloud; // TODO: Is this copy operation ok?
