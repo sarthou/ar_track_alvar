@@ -154,9 +154,9 @@ int main(int argc, char *argv[])
             std::getline(std::cin, s); if (s.length() > 0) posy=atof(s.c_str());
             std::cout<<"  Flag depth translation : "; std::flush(std::cout);
             std::getline(std::cin, s); if (s.length() > 0) posz=atof(s.c_str());
-            st.posx=posx;
+            st.posx=-posx;
             st.posy=posy;
-            st.posz=posz;
+            st.posz=-posz;
             std::cout<<"  Colors :" << std::endl;
             std::cout<<"  B - blue" << std::endl;
             std::cout<<"  R - red" << std::endl;
