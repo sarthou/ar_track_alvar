@@ -1,4 +1,4 @@
-[![Dependency Status][https://img.shields.io/badge/dependencies--1eb0fc.svg]][https://github.com/jeanpolochon/ar_track_alvar_bundles]
+[![Dependency Status](https://img.shields.io/badge/dependencies--1eb0fc.svg)](https://github.com/jeanpolochon/ar_track_alvar_bundles)
 
 # <img src="readme_images/MarkerData_0.png" width="50"> ar_track_alvar
 Original package
