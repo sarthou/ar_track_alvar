@@ -13,6 +13,7 @@ This readme will only show how to use the new nodes, for more information on ar_
 
 ## Tags preamble
 
+### Convention
 We always consider the orientation shown below as the reference orientation of the mark. You can distinguish this orientation with the two empty squares represented by the red box on this example.
 
 <img src="readme_images/MarkerRef.png" width="100">
@@ -32,6 +33,21 @@ Finally, we will consider the following 3D marker for each tag.
 
 <img src="readme_images/MarkerAxes.png" width="100">
 
+### Identifiers
+Each tags represents an identifier. In these nodes, the identifiers are numbers between 0 and 65535.
+The identifiers used to create a tag will be specified in the name of the PNG, a generated XML file.
+e.g :
+For a flag :
+```
+MarkerData_0.png
+MarkerData_0.xml
+```
+For a cube :
+```
+MarkerData_1_2_3_4_5_6.png
+MarkerData_1_2_3_4_5_6.xml
+```
+
 ## Flag generation
 A tag called "flag," is a single 2D tag that refers to a position offset to its own.
 
@@ -39,7 +55,7 @@ A tag called "flag," is a single 2D tag that refers to a position offset to its 
 ```
 $ rosrun ar_track_alvar createFlag
 ```
-First, enter the last ID you are using. Be careful, all the tags (flag or not), **must have a different identifier**, that is why the node automatically increases the identifiers of tags.
+First, enter the last ID you are using. The identifiers are chosen by you between 0 and 65535. Be careful, all the tags (flag or not), **must have a different identifier**, that is why the node automatically increases the identifiers of tags.
 
 The reference unit use on this node is the centimeter.
 After specifying the size of the tag, you can describe the position offset on X, Y, and Z.
@@ -57,7 +73,7 @@ A tag called "Cube" is composed of 6 tags assembled in a cube. Only the master t
 ```
 $ rosrun ar_track_alvar createCube
 ```
-First, enter the last ID you are using. Be careful, all the tags (flag or not), **must have a different identifier**, that is why the node automatically increases the identifiers of tags (**+6 per cube**).
+First, enter the last ID you are using. The identifiers are chosen by you between 0 and 65535. Be careful, all the tags (flag or not), **must have a different identifier**, that is why the node automatically increases the identifiers of tags (**+6 per cube**). The master identifier will always be the first one present in the PNG and XML files name.
 
 The reference unit use on this node is the centimeter.
 After specifying the size of the tag, specified the size of the cube and ... this is all you need to do !!
