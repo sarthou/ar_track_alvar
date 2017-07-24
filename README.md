@@ -1,3 +1,5 @@
+[![Dependencies][https://img.shields.io/badge/dependencies--1eb0fc.svg]][https://github.com/jeanpolochon/ar_track_alvar_bundles]
+
 # <img src="readme_images/MarkerData_0.png" width="50"> ar_track_alvar
 Original package
 - Package maintained by Scott Niekum
@@ -82,3 +84,19 @@ The node will generate a pattern that you have to cut and stick.
 ### Tips
 - Always take 1 cm margin on the size of your tag to keep a white border for better detection.
 - If you have to cut all the tags of the pattern, make sure to stick them with the correct order and orientation.
+
+## Map your identifiers
+
+Ar_track_alvar_bundles (dependency) lets you map your objects with a textual name. In the case of multi-tag objects, only the master must be a link.
+
+Fisrt, take the generated PNG and XML files and copy them to **ar_track_alvar_bundles / bundles /** and edit the **Map_ID_Name.txt** file.
+
+It is on this file that you will map the identifiers with the textual name.
+for example :
+```
+0 EXAMPLE_FLAG
+1 EXAMPLE_CUBE
+```
+> Here, the EXAMPLE_CUBE is composed of 6 tags, but we only refer to the first
+
+## Use your objects
