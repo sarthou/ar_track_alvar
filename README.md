@@ -14,6 +14,7 @@ This readme will only show how to use the new nodes, for more information on ar_
 ## Tags preamble
 
 We always consider the orientation shown below as the reference orientation of the mark. You can distinguish this orientation with the two empty squares represented by the red box on this example.
+
 <img src="readme_images/MarkerRef.png" width="100">
 
 When you create a new tag, an XML file will be generated with it. On this file you will find the description of the corners of each tag like this one:
@@ -24,9 +25,11 @@ When you create a new tag, an XML file will be generated with it. On this file y
     <corner x="-2" y="2" z="0" />
 ```
 If you want to manually modify this file, assume that the corners are as follows.
+
 <img src="readme_images/corners.png" width="100">
 
 Finally, we will consider the following 3D marker for each tag.
+
 <img src="readme_images/MarkerAxes.png" width="100">
 
 ## Flag generation
@@ -40,6 +43,7 @@ First, enter the last ID you are using. Be careful, all the tags (flag or not), 
 
 The reference unit use on this node is the centimeter.
 After specifying the size of the tag, you can describe the position offset on X, Y, and Z.
+
 <img src="readme_images/MarkerFlagExample.png" width="150">
 
 ### Tips
