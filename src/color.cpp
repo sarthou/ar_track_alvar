@@ -39,9 +39,9 @@ namespace col
       {
         if(ptr[3*x+2] == 0)
         {
-          ptr[3*x+2] = ((p_color >> 2)&0x01)*255;
-          ptr[3*x+1] = ((p_color >> 1)&0x01)*255;
-          ptr[3*x+0] = ((p_color >> 0)&0x01)*255;
+          ptr[3*x+2] = ((p_color >> 2)&0x01)*150; //r
+          ptr[3*x+1] = ((p_color >> 1)&0x01)*150; //g
+          ptr[3*x+0] = ((p_color >> 0)&0x01)*200; //b
         }
       }
     }
