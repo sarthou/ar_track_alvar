@@ -94,7 +94,6 @@ void GetMultiMarkerPoses(IplImage *image);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker);
 
-
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
 void GetMultiMarkerPoses(IplImage *image) {
 
@@ -198,6 +197,8 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
     cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
 
+bool allow_pub = true;
+
 if (enabled) {
   //If we've already gotten the cam info, then go ahead
   if(cam->getCamInfo_){
@@ -205,11 +206,12 @@ if (enabled) {
       //Get the transformation from the Camera to the output frame for this image capture
       tf::StampedTransform CamToOutput;
       try{
-	tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
-	tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
+      	tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
+      	tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
       }
       catch (tf::TransformException ex){
-	ROS_ERROR("%s",ex.what());
+	        ROS_ERROR("%s",ex.what());
+          allow_pub = false;
       }
 
       visualization_msgs::Marker rvizMarker;
@@ -255,7 +257,7 @@ if (enabled) {
         if(display_unknown_objects==1)
           makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
 
-        if(rvizMarker.header.frame_id != "")
+        if(rvizMarker.header.frame_id != "" && allow_pub)
           rvizMarkerPub_.publish (rvizMarker);
 	    }
 	  }
@@ -264,7 +266,7 @@ if (enabled) {
       //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
       for(int i=0; i<n_bundles; i++)
 	{
-	  if(bundles_seen[i] == true){
+	  if(bundles_seen[i] == true && allow_pub){
 	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
 	    rvizMarkerPub_.publish (rvizMarker);
 	  }
@@ -298,6 +300,8 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
 {
     sensor_msgs::ImagePtr image_msg =cv_ptr_->toImageMsg();
 
+    bool allow_pub = true;
+
     //If we've already gotten the cam info, then go ahead
         if(cam->getCamInfo_)
         {
@@ -313,6 +317,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                 catch (tf::TransformException ex)
                 {
                     ROS_ERROR("%s",ex.what());
+                    allow_pub = false;
                 }
                 visualization_msgs::Marker rvizMarker;
 
@@ -359,7 +364,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                         if(should_draw)
                         {
                             Pose p = (*(marker_detector.markers))[i].pose;
-                            if(display_unknown_objects==1)
+                            if(display_unknown_objects==1 && allow_pub)
                             {
                                 makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
                                 rvizMarkerPub_.publish (rvizMarker);
@@ -370,7 +375,7 @@ bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_tra
                 //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
                 for(int i=0; i<n_bundles; i++)
                 {
-                    if(bundles_seen[i] == true)
+                    if(bundles_seen[i] == true && allow_pub)
                     {
                         makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
                         rvizMarkerPub_.publish (rvizMarker);
