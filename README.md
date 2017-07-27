@@ -118,3 +118,9 @@ And enjoy !!!
 
 > the launch file is create for PR2 but you can change the **cam_image_topic** and **cam_info_topic** to adapte it for an other support
 > If you have any probleme with rviz, change **output_frame**
+
+## Option
+
+For flags and cubes, you can add color. Six colors are available in addition to black !!
+
+<img src="readme_images/colors.png" width="600">
