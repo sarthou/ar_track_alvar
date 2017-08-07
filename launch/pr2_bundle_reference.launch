@@ -11,6 +11,8 @@
 	<arg name="max_frequency" default="10" />
 	<arg name="display_unknown_object" default="0" />
 
+  <arg name="reference_service" default="ar_reference" />
+
 	<arg name="bundle_files" default="
 $(find ar_track_alvar_bundles)/bundles/MarkerData_0.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_1_2_3_4_5_6.xml
@@ -33,9 +35,7 @@ $(find ar_track_alvar_bundles)/bundles/MarkerData_55.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_56_57_58_59.xml
 "/>
 
-  <arg name="reference_service" default="ar_reference" />
-
-	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) $(arg display_unknown_object) $(arg bundle_files) $(arg reference_service)" />
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) $(arg display_unknown_object) $(arg reference_service) $(arg bundle_files)" />
 
   <include file="$(find reference_manager)/launch/referencer.launch">
    <arg name="node_name" value="$(arg reference_service)"/>

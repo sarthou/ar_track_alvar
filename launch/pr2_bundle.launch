@@ -2,25 +2,27 @@
 	<arg name="marker_size" default="5" />
 	<arg name="max_new_marker_error" default="0.01" />
 	<arg name="max_track_error" default="0.1" />
-        
+
 	<arg name="cam_image_topic" default="/narrow_stereo/left/image_raw" />
-	<arg name="cam_info_topic" default="/narrow_stereo/left/camera_info" />	
-        
-        
+	<arg name="cam_info_topic" default="/narrow_stereo/left/camera_info" />
+
+
 	<arg name="output_frame" default="/map" />
 	<arg name="max_frequency" default="10" />
 	<arg name="display_unknown_object" default="0" />
 
-	<arg name="bundle_files" default=" 
+	<arg name="reference_service" default="none" />
+
+	<arg name="bundle_files" default="
 $(find ar_track_alvar_bundles)/bundles/MarkerData_0.xml
-$(find ar_track_alvar_bundles)/bundles/MarkerData_1_2_3_4_5_6.xml 
+$(find ar_track_alvar_bundles)/bundles/MarkerData_1_2_3_4_5_6.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_7_49.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_50.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_8.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_9.xml
-$(find ar_track_alvar_bundles)/bundles/MarkerData_10.xml 
+$(find ar_track_alvar_bundles)/bundles/MarkerData_10.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_11.xml
-$(find ar_track_alvar_bundles)/bundles/MarkerData_12.xml 
+$(find ar_track_alvar_bundles)/bundles/MarkerData_12.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_13_14_15_16_17_18.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_19_20_21_22_23_24.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_25_26_27_28_29_30.xml
@@ -33,5 +35,5 @@ $(find ar_track_alvar_bundles)/bundles/MarkerData_55.xml
 $(find ar_track_alvar_bundles)/bundles/MarkerData_56_57_58_59.xml
 "/>
 
-	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) $(arg display_unknown_object) $(arg bundle_files)" />
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="findMarkerBundlesNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) $(arg display_unknown_object) $(arg reference_service) $(arg bundle_files)" />
 </launch>

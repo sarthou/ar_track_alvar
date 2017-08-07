@@ -45,8 +45,8 @@
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/image_encodings.h>
 #include <map>
-#include <string.h>
-#include <string> 
+#include <string>
+#include <stdlib.h>
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
 #include <std_msgs/Bool.h>
@@ -169,13 +169,15 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
       rvizMarker->ns = config[id];
     else
     {
+      char buff[5];
+      sprintf(buff,"%d",id);
       ar_track_alvar::standard_service srv;
       srv.request.action = "get_ref";
-      srv.request.param = std::to_string(id);
+      srv.request.param = string(buff);
       if (ref_client.call(srv) && (srv.response.code == 0))
         rvizMarker->ns = srv.response.value;
       else
-        rvizMarker->ns = string("marker_" + std::to_string(id));
+        rvizMarker->ns = string("marker_" + string(buff));
     }
   }
   else
@@ -467,7 +469,7 @@ int main(int argc, char *argv[])
   ros::init (argc, argv, "marker_detect");
   ros::NodeHandle n,  pn("~"), n2, n3, n4;
 
-  if(argc < 10){
+  if(argc < 11){
     std::cout << std::endl;
     cout << "Not enough arguments provided." << endl;
     cout << "Usage: ./findMarkerBundles <marker size in cm> <max new marker error> <max track error> <cam image topic> <cam info topic> <output frame> <max frequency> <display unknown objects> <list of bundle XML files...>" << endl;
@@ -484,8 +486,9 @@ int main(int argc, char *argv[])
   output_frame = argv[6];
   max_frequency = atof(argv[7]);
   display_unknown_objects = atof(argv[8]);
-  int n_args_before_list = 9;
+  int n_args_before_list = 10;
   n_bundles = argc - n_args_before_list;
+  cout << n_bundles << " bundles " << endl;
 
   // Set dynamically configurable parameters so they don't get replaced by default values
   pn.setParam("marker_size", marker_size);
@@ -517,13 +520,17 @@ int main(int argc, char *argv[])
   }
 
   //Load the configuration file (id <-> object)
-  if(argc == 9 + n_bundles)
+  if(string(argv[9]) != "none")
   {
+    cout << "dynamic mapping on " << argv[9] << endl;
     use_ref = true;
-    ref_client = n4.serviceClient<ar_track_alvar::standard_service>(argv[8 + n_bundles]);
+    ref_client = n4.serviceClient<ar_track_alvar::standard_service>(argv[9]);
   }
   else
+  {
+    cout << "static mapping" << endl;
     ReadConfig(config);
+  }
 
   // Prepare dynamic reconfiguration
   dynamic_reconfigure::Server < ar_track_alvar::ParamsConfig > server;
