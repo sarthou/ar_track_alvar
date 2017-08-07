@@ -114,7 +114,7 @@ Dynamic mapping is available with launch file : *pr2_bundle_reference.launch*
 
 ## Use your objects
 
-The last step ! Once you have map your identifiers, edit the launch file **pr2_bundle_no_kinect.launch** in the ar_track_alvar package and specify the objects you want to use :
+The last step ! Once you have map your identifiers, edit the launch file **pr2_bundle.launch** or **pr2_bundle_reference.launch** in the ar_track_alvar package and specify the objects you want to use :
 ```
 <arg name="bundle_files" default="
 $(find ar_track_alvar_bundles)/bundles/MarkerData_0.xml
@@ -124,7 +124,11 @@ $(find ar_track_alvar_bundles)/bundles/MarkerData_1_2_3_4_5_6.xml
 
 Now run the node :
 ```
-$ roslaunch ar_track_alvar pr2_bundle_no_kinect.launch
+$ roslaunch ar_track_alvar pr2_bundle.launch
+```
+or
+```
+$ roslaunch ar_track_alvar pr2_bundle_reference.launch
 ```
 
 And enjoy !!!
