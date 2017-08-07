@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ar_track_alvar)
+add_compile_options(-std=gnu++11)
 
 set(MSG_DEPS
     std_msgs
@@ -32,7 +33,9 @@ find_package(TinyXML REQUIRED)
 add_service_files(DIRECTORY srv
 	FILES
 	GetPositionAndOrientation.srv
-	SetCamTopic.srv)
+	SetCamTopic.srv
+  standard_service.srv
+  )
 
 generate_messages(
   DEPENDENCIES

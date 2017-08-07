@@ -46,12 +46,13 @@
 #include <sensor_msgs/image_encodings.h>
 #include <map>
 #include <string.h>
+#include <string> 
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
 #include <std_msgs/Bool.h>
 #include "ar_track_alvar/GetPositionAndOrientation.h"
 #include "ar_track_alvar/SetCamTopic.h"
-
+#include "ar_track_alvar/standard_service.h"
 
 using namespace alvar;
 using namespace std;
@@ -85,6 +86,9 @@ std::string cam_info_topic;
 std::string output_frame;
 int n_bundles = 0;
 std::map<int, std::string> config;
+
+bool use_ref = false;
+ros::ServiceClient ref_client;
 
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res);
 void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level);
@@ -160,7 +164,20 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   rvizMarker->scale.z = 0.2 * marker_size/100.0;
 
   if(type==MAIN_MARKER)
-    rvizMarker->ns = config[id];
+  {
+    if(!use_ref)
+      rvizMarker->ns = config[id];
+    else
+    {
+      ar_track_alvar::standard_service srv;
+      srv.request.action = "get_ref";
+      srv.request.param = std::to_string(id);
+      if (ref_client.call(srv) && (srv.response.code == 0))
+        rvizMarker->ns = srv.response.value;
+      else
+        rvizMarker->ns = string("marker_" + std::to_string(id));
+    }
+  }
   else
     rvizMarker->ns = "unknown object";
 
@@ -448,7 +465,7 @@ void enableCallback(const std_msgs::BoolConstPtr& msg)
 int main(int argc, char *argv[])
 {
   ros::init (argc, argv, "marker_detect");
-  ros::NodeHandle n,  pn("~"), n2, n3;
+  ros::NodeHandle n,  pn("~"), n2, n3, n4;
 
   if(argc < 10){
     std::cout << std::endl;
@@ -500,7 +517,13 @@ int main(int argc, char *argv[])
   }
 
   //Load the configuration file (id <-> object)
-  ReadConfig(config);
+  if(argc == 9 + n_bundles)
+  {
+    use_ref = true;
+    ref_client = n4.serviceClient<ar_track_alvar::standard_service>(argv[8 + n_bundles]);
+  }
+  else
+    ReadConfig(config);
 
   // Prepare dynamic reconfiguration
   dynamic_reconfigure::Server < ar_track_alvar::ParamsConfig > server;
