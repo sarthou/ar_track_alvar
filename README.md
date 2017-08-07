@@ -10,8 +10,8 @@ Current package
 - Package maintained by Guillaume Sarthou
 - gsarthou@laas.fr
 
-This repository is a fork from sniekum/ar_track_alvar. This repository offers two nodes to easily create tags.
-This readme will only show how to use the new nodes, for more information on ar_track_alvar, see http://www.ros.org/wiki/ar_track_alvar.
+This repository is a fork from sniekum/ar_track_alvar. This repository offers two nodes to easily create tags and a new launcher using dynamic referencing to name tags.
+This readme will only show how to use the new features, for more information on ar_track_alvar, see http://www.ros.org/wiki/ar_track_alvar.
 
 ## Tags preamble
 
@@ -87,6 +87,8 @@ The node will generate a pattern that you have to cut and stick.
 
 ## Map your identifiers
 
+### Static mapping
+
 Ar_track_alvar_bundles (dependency) lets you map your objects with a textual name. In the case of multi-tag objects, only the master must be a link.
 
 Fisrt, take the generated PNG and XML files and copy them to **ar_track_alvar_bundles / bundles /** and edit the **Map_ID_Name.txt** file.
@@ -98,6 +100,17 @@ for example :
 1 EXAMPLE_CUBE
 ```
 > Here, the EXAMPLE_CUBE is composed of 6 tags, but we only refer to the first
+
+Static mapping is available with launch file : *pr2_bundle.launch*
+
+### Dynamic mapping [![Dependency Status](https://img.shields.io/badge/dependencies-reference_manager-1eb0fc.svg)](https://github.com/sarthou/reference_manager)
+
+Dynamic mapping using *reference_manager* allow you to map the identifiers with the textual name from an external program.
+See *reference_manager* readme for a full documentation
+
+> For ar_track_alvar, the reference_manager service is renamed **ar_reference**
+
+Dynamic mapping is available with launch file : *pr2_bundle_reference.launch*
 
 ## Use your objects
 
