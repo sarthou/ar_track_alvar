@@ -175,10 +175,7 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
       srv.request.action = "get_ref";
       srv.request.param = string(buff);
       if (ref_client.call(srv) && (srv.response.code == 0))
-      {
-        rvizMarker->id = srv.response.value;
         rvizMarker->ns = srv.response.value;
-      }
       else
         rvizMarker->ns = string("marker_" + string(buff));
     }
