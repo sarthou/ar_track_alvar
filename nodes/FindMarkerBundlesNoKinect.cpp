@@ -462,9 +462,10 @@ void ReadConfig (std::map<int,std::string> & config, int* masters_id, int nb_bun
     {
       for(unsigned int i = 0; i < nb_bundles; i++)
       {
+        std::cout << masters_id[i] << std::endl;
         std::map<int, std::string>::iterator it;
         it = config.find(masters_id[i]);
-        if (it != config.end())
+        if (it == config.end())
         {
           ROS_ERROR("bundles files configuration : masters id's error");
           ROS_BREAK ();
