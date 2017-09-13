@@ -166,7 +166,18 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   if(type==MAIN_MARKER)
   {
     if(!use_ref)
-      rvizMarker->ns = config[id];
+    {
+      std::map<int,std::string>::iterator it;
+      it = config.find(id);
+      if (it != config.end())
+        rvizMarker->ns = config[id];
+      else
+      {
+        char buff[5];
+        sprintf(buff,"%d",id);
+        rvizMarker->ns = string("marker_" + string(buff));
+      }
+    }
     else
     {
       char buff[5];
@@ -214,7 +225,7 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
 //Callback to handle getting video frames and processing them
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
-    cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
+  cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
 
 bool allow_pub = true;
 
@@ -250,46 +261,47 @@ if (enabled) {
         bundles_seen[i] = false;
 
       for (size_t i=0; i<marker_detector.markers->size(); i++)
-	{
-	  int id = (*(marker_detector.markers))[i].GetId();
+    	{
+    	  int id = (*(marker_detector.markers))[i].GetId();
 
-	  // Draw if id is valid
-	  if(id >= 0){
+    	  // Draw if id is valid
+    	  if(id >= 0)
+        {
+          //Mark the bundle that marker belongs to as "seen"
+          for(int j=0; j<n_bundles; j++){
+            for(int k=0; k<bundle_indices[j].size(); k++){
+              if(bundle_indices[j][k] == id){
+                bundles_seen[j] = true;
+                break;
+              }
+            }
+          }
 
-	    //Mark the bundle that marker belongs to as "seen"
-	    for(int j=0; j<n_bundles; j++){
-	      for(int k=0; k<bundle_indices[j].size(); k++){
-		if(bundle_indices[j][k] == id){
-		  bundles_seen[j] = true;
-		  break;
-		}
-	      }
-	    }
+          // Don't draw if it is a master tag...we do this later, a bit differently
+          bool should_draw = true;
+          for(int k=0; k<n_bundles; k++)
+            if(id == master_id[k]) should_draw = false;
 
-	    // Don't draw if it is a master tag...we do this later, a bit differently
-	    bool should_draw = true;
-	    for(int k=0; k<n_bundles; k++){
-	      if(id == master_id[k]) should_draw = false;
-	    }
-	    if(should_draw){
-        Pose p = (*(marker_detector.markers))[i].pose;
-        if(display_unknown_objects==1)
-          makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
+          if(should_draw)
+          {
+            Pose p = (*(marker_detector.markers))[i].pose;
+            if(display_unknown_objects==1)
+              makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker);
 
-        if(rvizMarker.header.frame_id != "" && allow_pub)
-          rvizMarkerPub_.publish (rvizMarker);
-	    }
-	  }
-	}
+            if(rvizMarker.header.frame_id != "" && allow_pub)
+              rvizMarkerPub_.publish (rvizMarker);
+          }
+    	  }
+    	}
 
       //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
       for(int i=0; i<n_bundles; i++)
-	{
-	  if(bundles_seen[i] == true && allow_pub){
-	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
-	    rvizMarkerPub_.publish (rvizMarker);
-	  }
-	}
+    	{
+    	  if(bundles_seen[i] == true && allow_pub){
+    	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker);
+    	    rvizMarkerPub_.publish (rvizMarker);
+    	  }
+    	}
 
     }
     catch (cv_bridge::Exception& e){
@@ -311,9 +323,6 @@ bool ChangeCam(ar_track_alvar::SetCamTopic::Request  &req, ar_track_alvar::SetCa
     res.result = true;
     return true;
 }
-
-
-
 
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res)
 {
