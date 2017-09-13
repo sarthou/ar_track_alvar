@@ -93,7 +93,7 @@ ros::ServiceClient ref_client;
 bool FindMarker(ar_track_alvar::GetPositionAndOrientation::Request  &req, ar_track_alvar::GetPositionAndOrientation::Response &res);
 void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level);
 void enableCallback(const std_msgs::BoolConstPtr& msg);
-void ReadConfig (std::map<int,std::string> & config);
+void ReadConfig (std::map<int,std::string> & config, int* masters_id, int nb_bundles);
 void GetMultiMarkerPoses(IplImage *image);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker);
@@ -424,7 +424,7 @@ return true;
 
 
 //Load the configuration file (id <-> object)
-void ReadConfig (std::map<int,std::string> & config)
+void ReadConfig (std::map<int,std::string> & config, int* masters_id, int nb_bundles)
 {
     FILE * pFile;
     char buffer [100];
@@ -452,6 +452,25 @@ void ReadConfig (std::map<int,std::string> & config)
         config[i]=(string) name;
     }
     fclose (pFile);
+
+    if(config.size() != nb_bundles)
+    {
+      ROS_ERROR("bundles files configuration : not same number of bundles");
+      ROS_BREAK ();
+    }
+    else
+    {
+      for(unsigned int i = 0; i < nb_bundles; i++)
+      {
+        std::map<int, std::string>::iterator it;
+        it = config.find(masters_id[i]);
+        if (it != config.end())
+        {
+          ROS_ERROR("bundles files configuration : masters id's error");
+          ROS_BREAK ();
+        }
+      }
+    }
 }
 
 void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level)
@@ -538,7 +557,7 @@ int main(int argc, char *argv[])
   else
   {
     cout << "static mapping" << endl;
-    ReadConfig(config);
+    ReadConfig(config, master_id, n_bundles);
   }
 
   // Prepare dynamic reconfiguration
