@@ -70,6 +70,8 @@ The reference unit use on this node is the centimeter but you can change it with
 After specifying the size of the tag, specified the size of the cube and ... this is all you need to do !!
 
 The node will generate a pattern that you have to cut and stick.
+ :exclamation: Once the PNG is printed, do not cut all markers independently, but only the entire pattern.
+
 ### Tips
 - Always take 1 cm margin on the size of your tag to keep a white border for better detection.
 - If you have to cut all the tags of the pattern, make sure to stick them with the correct order and orientation.
@@ -97,7 +99,7 @@ Several options can be added when you run the generators.
  - **-r 5**                     marker content resolution -- 0 uses default
  - **-m 2.0**                   marker margin resolution -- 0 uses default
  - **-p**                     prompt marker placements interactively from the user
- - **-c B**                    cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
+ - **-c B**                    marker color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
 
 ### For cubes
 

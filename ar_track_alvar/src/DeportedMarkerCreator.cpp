@@ -154,16 +154,15 @@ int main(int argc, char *argv[])
         {
             std::string filename(argv[0]);
             filename = filename.substr(filename.find_last_of('\\') + 1);
-            std::cout << "DeportedMarkerCreator" << std::endl;
-            std::cout << "===================" << std::endl;
+            std::cout << "#=======================#" << std::endl;
+            std::cout << "= DeportedMarkerCreator =" << std::endl;
+            std::cout << "#=======================#" << std::endl;
             std::cout << std::endl;
             std::cout << "Description:" << std::endl;
-            std::cout << "  This is an example of how to use the 'MarkerData'" << std::endl;
-            std::cout << "  classes to generate marker images. This application can be used to" << std::endl;
-            std::cout << "  generate deported markers setups that can be used with" << std::endl;
-            std::cout << "  SampleMarkerDetector and SampleMultiMarker." << std::endl;
+            std::cout << "  This is a utility to generate deported markers." << std::endl;
+            std::cout << "  This will generate both the PNG and XML files where you run this utility." << std::endl;
             std::cout << std::endl;
-            std::cout << "Usage:" << std::endl;
+            std::cout << "Options usage:" << std::endl;
             std::cout << "  " << filename << " [options] argument" << std::endl;
             std::cout << std::endl;
             std::cout << "    65535             marker with number 65535" << std::endl;
@@ -177,7 +176,7 @@ int main(int argc, char *argv[])
             std::cout << "    -r 5              marker content resolution -- 0 uses default" << std::endl;
             std::cout << "    -m 2.0            marker margin resolution -- 0 uses default" << std::endl;
             std::cout << "    -p                prompt marker placements interactively from the user" << std::endl;
-            std::cout << "    -c B              cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black" << std::endl;
+            std::cout << "    -c B              marker color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black" << std::endl;
             std::cout << std::endl;
 
             // Interactive stuff here
