@@ -135,6 +135,12 @@ struct State {
 
     void AddCube()
     {
+        if (img)
+        {
+            cvReleaseImage(&img);
+            img = 0;
+        }
+        
         for(unsigned int face = 0; face < 6; face++)
         {
           std::cout<<"  marker id ["<< marker_id <<"]: "; std::flush(std::cout);
