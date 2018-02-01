@@ -146,7 +146,7 @@ add_executable(createMarker src/SampleMarkerCreator.cpp)
 target_link_libraries(createMarker ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createMarker ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
-add_executable(createCube src/SampleCubeCreator.cpp)
+add_executable(createCube src/CubeCreator.cpp)
 target_link_libraries(createCube ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createCube ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
