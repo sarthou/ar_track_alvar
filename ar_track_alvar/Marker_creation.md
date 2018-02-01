@@ -26,8 +26,9 @@ Finally, we will consider the following 3D marker for each tag.
 ### Identifiers
 Each tags represents an identifier. In these nodes, the identifiers are numbers between 0 and 65535.
 The identifiers used to create a tag will be specified in the name of the PNG, a generated XML file.
-e.g :
-For a flag :
+
+e.g :    
+For a single marker :    
 ```
 MarkerData_0.png
 MarkerData_0.xml
@@ -85,28 +86,28 @@ Several options can be added when you run the generators.
 
 ### For deported markers
 
- - 65535             marker with number 65535
- - -1 \"hello world\"   marker with string
- - -2 catalog.xml       marker with file reference
- - -3 www.vtt.fi        marker with URL
- - -u 96                use units corresponding to 1.0 unit per 96 pixels
- - -uin                 use inches as units (assuming 96 dpi)
- - -ucm                 use cm's as units (assuming 96 dpi) <default>
- - -s 5.0               use marker size 5.0x5.0 units (default 9.0x9.0)
- - -r 5                 marker content resolution -- 0 uses default
- - -m 2.0               marker margin resolution -- 0 uses default
- - -p                   prompt marker placements interactively from the user
- - -c B                 cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
+ - **65535**                    marker with number 65535
+ - **-1 \"hello world\"**       marker with string
+ - **-2 catalog.xml**           marker with file reference
+ - **-3 http://wiki.ros.org**   marker with URL
+ - **-u 96**                    use units corresponding to 1.0 unit per 96 pixels
+ - **-uin**                     use inches as units (assuming 96 dpi)
+ - **-ucm**                     use cm's as units (assuming 96 dpi) <default>
+ - **-s 5.0**                   use marker size 5.0x5.0 units (default 9.0x9.0)
+ - **-r 5**                     marker content resolution -- 0 uses default
+ - **-m 2.0**                   marker margin resolution -- 0 uses default
+ - **-p**                     prompt marker placements interactively from the user
+ - **-c B**                    cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
 
 ### For cubes
 
- - 65535             marker with number 65535
- - -u 96             use units corresponding to 1.0 unit per 96 pixels
- - -uin              use inches as units (assuming 96 dpi)
- - -ucm              use cm's as units (assuming 96 dpi) <default>
- - -sm 5.0           use marker size 5.0x5.0 units (default 9.0x9.0)
- - -sc 5.0           use cube size 5.0x5.0 units (default 9.0x9.0)
- - -r 5              marker content resolution -- 0 uses default
- - -m 1.0            marker margin resolution -- 0 uses default
- - -p                prompt marker placements interactively from the user
- - -c B              cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
+ - **65535**                    marker with number 65535
+ - **-u 96**                    use units corresponding to 1.0 unit per 96 pixels
+ - **-uin**                     use inches as units (assuming 96 dpi)
+ - **-ucm**                     use cm's as units (assuming 96 dpi) <default>
+ - **-sm 5.0**                  use marker size 5.0x5.0 units (default 9.0x9.0)
+ - **-sc 5.0**                  use cube size 5.0x5.0 units (default 9.0x9.0)
+ - **-r 5**                     marker content resolution -- 0 uses default
+ - **-m 1.0**                   marker margin resolution -- 0 uses default
+ - **-p**                       prompt marker placements interactively from the user
+ - **-c B**                     cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black
