@@ -339,6 +339,7 @@ int main(int argc, char *argv[])
 
                 st.AddCube();
                 st.Save();
+                st.multi_marker = MultiMarker();
             }
         }
 
