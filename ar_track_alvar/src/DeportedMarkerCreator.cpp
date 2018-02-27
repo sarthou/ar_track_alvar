@@ -30,7 +30,7 @@ struct State {
           units(96.0/2.54),      // cm assuming 96 dpi
           marker_side_len(9.0),  // 9 cm
           marker_type(0),
-          posx(0), posy(0),
+          posx(0), posy(0), posz(0),
           content_res(0),        // 0 uses default
           margin_res(0.0),       // 0.0 uses default (can be n*0.5)
           marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER),
@@ -57,25 +57,38 @@ struct State {
             filename<<"MarkerData";
         }
 
-        int idi = atoi(id);
-        md.SetContent(marker_data_content_type, idi, 0);
-        if (filename.str().length()<64) filename<<"_"<<idi;
+        if (marker_data_content_type == MarkerData::MARKER_CONTENT_TYPE_NUMBER)
+        {
+          int idi = atoi(id);
+          md.SetContent(marker_data_content_type, idi, 0);
+          std::cout<<"SetContent "<<id<<std::endl;
+          if (filename.str().length()<64) filename<<"_"<<idi;
 
-        Pose pose;
-        pose.Reset();
-        pose.SetTranslation(posx, -posy, posz);
-        multi_marker.PointCloudAdd(idi, marker_side_len, pose);
-
-        std::cout << "point cloud" << std::endl;
+          Pose pose;
+          pose.Reset();
+          pose.SetTranslation(posx, -posy, posz);
+          multi_marker.PointCloudAdd(idi, marker_side_len, pose);
+        }
+        else
+        {
+          md.SetContent(marker_data_content_type, 0, id);
+          const char *p = id;
+          int counter=0;
+          filename<<"_";
+          while(*p)
+          {
+            if (!isalnum(*p)) filename<<"_";
+            else filename<<(char)tolower(*p);
+            p++; counter++;
+            if (counter > 8) break;
+          }
+        }
 
         md.ScaleMarkerToImage(img);
-        std::cout << "ScaleMarkerToImage" << std::endl;
         cvResetImageROI(img);
-        std::cout << "cvResetImageROI" << std::endl;
         IplImage* color_img = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,3);
         cvCvtColor(img, color_img, CV_GRAY2RGB);
         col::change_color(color_img, color);
-        std::cout << "change_color" << std::endl;
         img = color_img;
     }
 
@@ -146,7 +159,11 @@ int main(int argc, char *argv[])
                 col::color_t tmp_color = col::get_color(argv[++i][0]);
                 st.color = col::get_color(tmp_color);
             }
-            else st.AddMarker(argv[i]);
+            else
+            {
+              st.AddMarker(argv[i]);
+              st.Save();
+            }
         }
 
         // Output usage message
