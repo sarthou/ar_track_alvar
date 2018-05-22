@@ -237,9 +237,8 @@ void MultiMarker::PointCloudCorners3d(double edge_length, Pose &pose, CvPoint3D6
 		//       Should we get the values from there somehow?
 		double X_data[4] = {0, 0, 0, 1};
 		if (j == 0) {
-			int zzzz=2;
-			//X_data[0] = -0.5*edge_length;
-			//X_data[1] = -0.5*edge_length;
+			X_data[0] = -0.5*edge_length;
+			X_data[1] = -0.5*edge_length;
 		} else if (j == 1) {
 			X_data[0] = +0.5*edge_length;
 			X_data[1] = -0.5*edge_length;
@@ -286,8 +285,8 @@ void MultiMarker::PointCloudRotate(int marker_id, int rot[9])
 	for(int src = 0; src < 3; src++)
 		for(int dest = 0; dest < 3; dest++)
 		{
-			int weight;
-			if(weight = rot[src*3 + dest])
+			int weight = rot[src*3 + dest];
+			if(weight != 0)
 			{
 				double tmp[4];
 				for(size_t j = 0; j < 4; ++j)

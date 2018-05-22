@@ -26,6 +26,8 @@ struct State {
 
     State()
         : img(0),
+          filename("marker"),
+          minx(0), miny(0), maxx(0), maxy(0),
           prompt(false),
           units(96.0/2.54),      // cm assuming 96 dpi
           marker_side_len(9.0),  // 9 cm
@@ -33,8 +35,9 @@ struct State {
           posx(0), posy(0), posz(0),
           content_res(0),        // 0 uses default
           margin_res(0.0),       // 0.0 uses default (can be n*0.5)
-          marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER),
-          color(0)
+          array(false),
+          color(0),
+          marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER)
     {}
     ~State() {
         if (img) cvReleaseImage(&img);
@@ -209,7 +212,6 @@ int main(int argc, char *argv[])
             std::string s;
             int marker_id=0;
             double posx=0.0, posy=0.0, posz=0.0;
-            bool vert=false;
 
             while(loop)
             {

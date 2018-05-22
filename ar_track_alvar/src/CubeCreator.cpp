@@ -40,8 +40,9 @@ struct State {
           transx(0), transy(0), transz(0),
           content_res(0),        // 0 uses default
           margin_res(0.0),       // 0.0 uses default (can be n*0.5)
-          marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER),
-          color(0)
+          array(false),
+          color(0),
+          marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER)
     {}
     ~State() {
         if (img) cvReleaseImage(&img);
@@ -306,8 +307,6 @@ int main(int argc, char *argv[])
 
             bool loop=true;
             std::string s;
-            double posx=0.0, posy=0.0, posz=0.0;
-            bool vert=false;
 
             while(loop)
             {
