@@ -4,7 +4,7 @@
 	<arg name="max_track_error" default="0.0" />
 
     <arg name="cam_image_topic" default="/kinect_head/depth_registered/points" />
-	<arg name="cam_info_topic" default="/kinect_head/rgb/camera_info" />	
+		<arg name="cam_info_topic" default="/kinect_head/rgb/camera_info" />	
 
 	<arg name="output_frame" default="/torso_lift_link" />
     <arg name="med_filt_size" default="10" />

@@ -68,6 +68,7 @@ Pose *bundlePoses;
 int *master_id;
 bool *bundles_seen;
 std::vector<int> *bundle_indices;
+std::set<double> markers_size;
 bool init = true;
 
 double marker_size;
@@ -78,22 +79,36 @@ std::string cam_info_topic;
 std::string output_frame;
 int n_bundles = 0;
 
-void GetMultiMarkerPoses(IplImage *image);
+void GetMultiMarkerPoses(IplImage *image, double m_size);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker);
+void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size);
 
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
-void GetMultiMarkerPoses(IplImage *image) {
+void GetMultiMarkerPoses(IplImage *image, double m_size) {
 
-  if (marker_detector.Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true)){
+  if(m_size != 0)
+    marker_detector.SetMarkerSize(m_size);
+  else
+    marker_detector.SetMarkerSize(marker_size);
+
+  if (marker_detector.Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true))
+  {
     for(int i=0; i<n_bundles; i++)
-      multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
+    {
+      if(multi_marker_bundles[i]->getMarkerSize() == m_size)
+        multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
+    }
 
-    if(marker_detector.DetectAdditional(image, cam, false) > 0){
-      for(int i=0; i<n_bundles; i++){
-	if ((multi_marker_bundles[i]->SetTrackMarkers(marker_detector, cam, bundlePoses[i], image) > 0))
-	  multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
+    if(marker_detector.DetectAdditional(image, cam, false) > 0)
+    {
+      for(int i=0; i<n_bundles; i++)
+      {
+        if(multi_marker_bundles[i]->getMarkerSize() == m_size)
+        {
+          if ((multi_marker_bundles[i]->SetTrackMarkers(marker_detector, cam, bundlePoses[i], image) > 0))
+        	  multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
+        }
       }
     }
   }
@@ -101,7 +116,7 @@ void GetMultiMarkerPoses(IplImage *image) {
 
 
 // Given the pose of a marker, builds the appropriate ROS messages for later publishing
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker){
+void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size){
   double px,py,pz,qx,qy,qz,qw;
 
   px = p.translation[0]/100.0;
@@ -138,9 +153,9 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   rvizMarker->header.stamp = image_msg->header.stamp;
   rvizMarker->id = id;
 
-  rvizMarker->scale.x = 1.0 * marker_size/100.0;
-  rvizMarker->scale.y = 1.0 * marker_size/100.0;
-  rvizMarker->scale.z = 0.2 * marker_size/100.0;
+  rvizMarker->scale.x = 1.0 * m_size/100.0;
+  rvizMarker->scale.y = 1.0 * m_size/100.0;
+  rvizMarker->scale.z = 0.2 * m_size/100.0;
 
   if(type==MAIN_MARKER)
     rvizMarker->ns = "main_shapes";
@@ -198,11 +213,11 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       //Get the transformation from the Camera to the output frame for this image capture
       tf::StampedTransform CamToOutput;
       try{
-	tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
-	tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
+      	tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
+      	tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
       }
       catch (tf::TransformException ex){
-	ROS_ERROR("%s",ex.what());
+	      ROS_ERROR("%s",ex.what());
       }
 
       visualization_msgs::Marker rvizMarker;
@@ -219,51 +234,70 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
       // do this conversion here -jbinney
       IplImage ipl_image = cv_ptr_->image;
-      GetMultiMarkerPoses(&ipl_image);
+      for(auto size : markers_size)
+      {
+        GetMultiMarkerPoses(&ipl_image, size);
 
-      //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
-      for(int i=0; i<n_bundles; i++)
-	bundles_seen[i] = false;
+        //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
+        for(int i=0; i<n_bundles; i++)
+  	       bundles_seen[i] = false;
 
-      for (size_t i=0; i<marker_detector.markers->size(); i++)
-	{
-	  int id = (*(marker_detector.markers))[i].GetId();
+        for (size_t i=0; i<marker_detector.markers->size(); i++)
+      	{
+      	  int id = (*(marker_detector.markers))[i].GetId();
 
-	  // Draw if id is valid
-	  if(id >= 0){
+      	  // Draw if id is valid
+      	  if(id >= 0){
 
-	    //Mark the bundle that marker belongs to as "seen"
-	    for(int j=0; j<n_bundles; j++){
-	      for(size_t k=0; k<bundle_indices[j].size(); k++){
-		if(bundle_indices[j][k] == id){
-		  bundles_seen[j] = true;
-		  break;
-		}
-	      }
-	    }
+            bool valid_marker = false;
+            for(int j=0; j<n_bundles; j++)
+            {
+              if(multi_marker_bundles[j]->IsValidMarker(id))
+              {
+                if(multi_marker_bundles[j]->getMarkerSize() == size)
+                {
+                  valid_marker = true;
+                  break;
+                }
+              }
+            }
 
-	    // Don't draw if it is a master tag...we do this later, a bit differently
-	    bool should_draw = true;
-	    for(int i=0; i<n_bundles; i++){
-	      if(id == master_id[i]) should_draw = false;
-	    }
-	    if(should_draw){
-	      Pose p = (*(marker_detector.markers))[i].pose;
-	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
-	      rvizMarkerPub_.publish (rvizMarker);
-	    }
-	  }
-	}
+            if(valid_marker == false)
+              continue;
 
-      //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
-      for(int i=0; i<n_bundles; i++)
-	{
-	  if(bundles_seen[i] == true){
-	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker);
-	    rvizMarkerPub_.publish (rvizMarker);
-	    arPoseMarkers_.markers.push_back (ar_pose_marker);
-	  }
-	}
+      	    //Mark the bundle that marker belongs to as "seen"
+      	    for(int j=0; j<n_bundles; j++){
+      	      for(size_t k=0; k<bundle_indices[j].size(); k++){
+            		if(bundle_indices[j][k] == id){
+            		  bundles_seen[j] = true;
+            		  break;
+            		}
+      	      }
+      	    }
+
+      	    // Don't draw if it is a master tag...we do this later, a bit differently
+      	    bool should_draw = true;
+      	    for(int i=0; i<n_bundles; i++){
+      	      if(id == master_id[i]) should_draw = false;
+      	    }
+      	    if(should_draw){
+      	      Pose p = (*(marker_detector.markers))[i].pose;
+      	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, size);
+      	      rvizMarkerPub_.publish (rvizMarker);
+      	    }
+      	  }
+      	}
+
+        //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
+        for(int i=0; i<n_bundles; i++)
+      	{
+      	  if(bundles_seen[i] == true){
+      	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, size);
+      	    rvizMarkerPub_.publish (rvizMarker);
+      	    arPoseMarkers_.markers.push_back (ar_pose_marker);
+      	  }
+      	}
+      }
 
       //Publish the marker messages
       arMarkerPub_.publish (arPoseMarkers_);
@@ -316,6 +350,7 @@ int main(int argc, char *argv[])
       multi_marker_bundles[i]->Load(argv[i + n_args_before_list], FILE_FORMAT_XML);
       master_id[i] = multi_marker_bundles[i]->getMasterId();
       bundle_indices[i] = multi_marker_bundles[i]->getIndices();
+      markers_size.insert(multi_marker_bundles[i]->getMarkerSize());
     }
     else{
       cout<<"Cannot load file "<< argv[i + n_args_before_list] << endl;

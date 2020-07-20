@@ -131,6 +131,11 @@ bool MultiMarker::LoadXML(const char* fname) {
 
 	int n_markers;
 	if (xml_root->QueryIntAttribute("markers", &n_markers) != TIXML_SUCCESS) return false;
+	double size;
+	if (xml_root->QueryDoubleAttribute("marker_size", &size) == TIXML_SUCCESS)
+		marker_size = size;
+	else
+		marker_size = 0;
 
 	pointcloud.clear();
 	marker_indices.resize(n_markers);

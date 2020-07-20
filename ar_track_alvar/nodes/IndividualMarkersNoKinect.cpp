@@ -80,7 +80,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
-    //If we've already gotten the cam info, then go ahead
+  //If we've already gotten the cam info, then go ahead
 	if(cam->getCamInfo_){
 		try{
 			tf::StampedTransform CamToOutput;
@@ -240,6 +240,7 @@ int main(int argc, char *argv[])
 	ros::init (argc, argv, "marker_detect");
 	ros::NodeHandle n, pn("~");
 
+	std::cout << "nb arg " << argc << std::endl;
   if(argc > 1) {
     ROS_WARN("Command line arguments are deprecated. Consider using ROS parameters and remappings.");
 
@@ -259,6 +260,7 @@ int main(int argc, char *argv[])
     cam_image_topic = argv[4];
     cam_info_topic = argv[5];
     output_frame = argv[6];
+    std::cout << "--" << cam_image_topic << std::endl;
 
     if (argc > 7) {
       max_frequency = atof(argv[7]);
