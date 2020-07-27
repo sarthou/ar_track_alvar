@@ -198,6 +198,10 @@ public:
 		return marker_size;
 	}
 
+	void setMarkerSize(double size){
+		marker_size = size;
+	}
+
 	/** \brief Set new markers to be tracked for \e MarkerDetector
 	 * Sometimes the \e MultiMarker implementation knows more about marker
 	 * locations compared to \e MarkerDetector . Then this method can be

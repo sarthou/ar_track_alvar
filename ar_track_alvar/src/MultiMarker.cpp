@@ -61,6 +61,7 @@ bool MultiMarker::SaveXML(const char* fname) {
 
 	int n_markers = marker_indices.size();
 	xml_root->SetAttribute("markers", n_markers);
+	xml_root->SetDoubleAttribute("marker_size", marker_size);
 
 	for(int i = 0; i < n_markers; ++i) {
 		TiXmlElement *xml_marker = new TiXmlElement("marker");

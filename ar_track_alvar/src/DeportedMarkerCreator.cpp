@@ -56,6 +56,7 @@ struct State {
     void AddMarker(const char *id) {
         MarkerData md(marker_side_len, content_res, margin_res);
         int side_len = int(marker_side_len*units+0.5);
+        multi_marker.setMarkerSize(marker_side_len);
 
         imgs.push_back(cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1));
         filenames.push_back("MarkerData");
