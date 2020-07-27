@@ -50,15 +50,15 @@ public:
 			is_initialized = true;
 			return false;
 		}
-		double dist = (prev[0]-trad[0])*(prev[0]-trad[0]) + 
-						(prev[1]-trad[1])*(prev[1]-trad[1]) + 
+		double dist = (prev[0]-trad[0])*(prev[0]-trad[0]) +
+						(prev[1]-trad[1])*(prev[1]-trad[1]) +
 						(prev[2]-trad[2])*(prev[2]-trad[2]);
 		if(dist > limit)
 		{
 			memcpy(prev, trad, 3*sizeof(double));
 			return true;
 		}
-		return false;		
+		return false;
 	}
 };
 CameraMoves moving;
@@ -100,7 +100,7 @@ void SimpleSfM::AddMarker(int marker_id, double edge_length, Pose &pose) {
 }
 
 float PointVectorFromCamera(CvPoint3D32f p3d, CvPoint3D32f &p3d_vec, Pose *camera_pose) {
-	double pd[16], v[4] = {0,0,0,1};	
+	double pd[16], v[4] = {0,0,0,1};
 	CvMat Pi = cvMat(4, 4, CV_64F, pd);
 	CvMat V = cvMat(4, 1, CV_64F, v);
 
@@ -147,8 +147,8 @@ void CreateShadowPoint(CvPoint3D32f &p3d_sh, CvPoint3D32f p3d, CameraEC *cam, Po
 	p3d_sh.y += p3d.y;
 	p3d_sh.z += p3d.z;
 
-	//std::cout<<"p  : "<<p3d.x<<","<<p3d.y<<","<<p3d.z<<std::endl;	
-	//std::cout<<"psh: "<<p3d_sh.x<<","<<p3d_sh.y<<","<<p3d_sh.z<<std::endl;	
+	//std::cout<<"p  : "<<p3d.x<<","<<p3d.y<<","<<p3d.z<<std::endl;
+	//std::cout<<"psh: "<<p3d_sh.x<<","<<p3d_sh.y<<","<<p3d_sh.z<<std::endl;
 }
 
 bool SimpleSfM::Update(IplImage *image, bool assume_plane, bool triangulate, float reproj_err_limit, float triangulate_angle) {
@@ -323,7 +323,7 @@ bool SimpleSfM::Update(IplImage *image, bool assume_plane, bool triangulate, flo
 				dist_sq       += (f.p2d.y-f.projected_p2d.y)*(f.p2d.y-f.projected_p2d.y);
 				double dist_sh_sq = (f.projected_p2d_sh.x-f.projected_p2d.x)*(f.projected_p2d_sh.x-f.projected_p2d.x);
 				dist_sh_sq       += (f.projected_p2d_sh.y-f.projected_p2d.y)*(f.projected_p2d_sh.y-f.projected_p2d.y);
-				if ((dist_sq < reproj_err_limit_sq) && (dist_sh_sq > parallax_length_sq)) { 
+				if ((dist_sq < reproj_err_limit_sq) && (dist_sh_sq > parallax_length_sq)) {
 					container_triangulated[iter->first] = iter->second;
 					f.estimation_type = 3;
 				}
@@ -491,12 +491,12 @@ void SimpleSfM::Draw(IplImage *rgba) {
 			//	cvCircle(rgba, cvPointFrom32f(f.p2d), 7, CV_RGB(255,0,0));
 			//} else {
 			//	int id = iter->first-1024+1;
-			//	if (f.has_p3d) { 
+			//	if (f.has_p3d) {
 			//		cvCircle(rgba, cvPointFrom32f(f.p2d), 5, CV_RGB(0,255,0));
 			//	}
-			//	else if (f.has_stored_pose) 
+			//	else if (f.has_stored_pose)
 			//		cvCircle(rgba, cvPointFrom32f(f.p2d), f.tri_cntr+1, CV_RGB(255,0,255));
-			//	else 
+			//	else
 			//		cvCircle(rgba, cvPointFrom32f(f.p2d), 5, CV_RGB(0,255,255));
 			//}
 		}
@@ -504,4 +504,3 @@ void SimpleSfM::Draw(IplImage *rgba) {
 }
 
 } // namespace alvar
-

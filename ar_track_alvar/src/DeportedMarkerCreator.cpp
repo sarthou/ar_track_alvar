@@ -5,8 +5,8 @@ using namespace std;
 using namespace alvar;
 
 struct State {
-    IplImage *img;
-    stringstream filename;
+    std::vector<IplImage*> imgs;
+    std::vector<std::string> filenames;
     double minx, miny, maxx, maxy; // top-left and bottom-right in pixel units
     MultiMarker multi_marker;
 
@@ -25,9 +25,7 @@ struct State {
     MarkerData::MarkerContentType marker_data_content_type;
 
     State()
-        : img(0),
-          filename("marker"),
-          minx(0), miny(0), maxx(0), maxy(0),
+        : minx(0), miny(0), maxx(0), maxy(0),
           prompt(false),
           units(96.0/2.54),      // cm assuming 96 dpi
           marker_side_len(9.0),  // 9 cm
@@ -40,32 +38,33 @@ struct State {
           marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER)
     {}
     ~State() {
-        if (img) cvReleaseImage(&img);
+        for(auto img : imgs)
+          cvReleaseImage(&img);
+    }
+
+    bool markerExist() { return imgs.size(); }
+
+    void resetMarker()
+    {
+      multi_marker = MultiMarker();
+      for(auto img : imgs)
+        cvReleaseImage(&img);
+      imgs.clear();
+      filenames.clear();
     }
 
     void AddMarker(const char *id) {
-        std::cout<<"ADDING MARKER "<<id<<std::endl;
-
         MarkerData md(marker_side_len, content_res, margin_res);
         int side_len = int(marker_side_len*units+0.5);
-        if (img)
-        {
-            cvReleaseImage(&img);
-            img = 0;
-        }
 
-        if (img == 0) {
-            img = cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1);
-            filename.str("");
-            filename<<"MarkerData";
-        }
+        imgs.push_back(cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1));
+        filenames.push_back("MarkerData");
 
         if (marker_data_content_type == MarkerData::MARKER_CONTENT_TYPE_NUMBER)
         {
           int idi = atoi(id);
           md.SetContent(marker_data_content_type, idi, 0);
-          std::cout<<"SetContent "<<id<<std::endl;
-          if (filename.str().length()<64) filename<<"_"<<idi;
+          if (filenames.back().length()<64) filenames.back() += "_" + std::to_string(idi);
 
           Pose pose;
           pose.Reset();
@@ -77,31 +76,35 @@ struct State {
           md.SetContent(marker_data_content_type, 0, id);
           const char *p = id;
           int counter=0;
-          filename<<"_";
+          filenames.back() += "_";
           while(*p)
           {
-            if (!isalnum(*p)) filename<<"_";
-            else filename<<(char)tolower(*p);
+            if (!isalnum(*p)) filenames.back() += "_";
+            else filenames.back() += tolower(*p);
             p++; counter++;
             if (counter > 8) break;
           }
         }
 
-        md.ScaleMarkerToImage(img);
-        cvResetImageROI(img);
-        IplImage* color_img = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,3);
-        cvCvtColor(img, color_img, CV_GRAY2RGB);
+        md.ScaleMarkerToImage(imgs.back());
+        cvResetImageROI(imgs.back());
+        IplImage* color_img = cvCreateImage(cvGetSize(imgs.back()),IPL_DEPTH_8U,3);
+        cvCvtColor(imgs.back(), color_img, CV_GRAY2RGB);
         col::change_color(color_img, color);
-        img = color_img;
+        imgs.back() = color_img;
     }
 
     void Save() {
-        if (img) {
+        if (imgs.size()) {
             std::stringstream filenamexml;
-            filenamexml<<filename.str()<<".xml";
-            filename<<".png";
-            std::cout<<"Saving: "<<filename.str()<<std::endl;
-            cvSaveImage(filename.str().c_str(), img);
+            filenamexml<<filenames[0]<<".xml";
+
+            for(size_t i = 0; i < imgs.size(); i++)
+            {
+              std::string tmp_name = filenames[i] + ".png";
+              std::cout<< "Saving: " << tmp_name <<std::endl;
+              cvSaveImage(tmp_name.c_str(), imgs[i]);
+            }
 
             std::cout<<"Saving: "<<filenamexml.str()<<std::endl;
             multi_marker.Save(filenamexml.str().c_str(), alvar::FILE_FORMAT_XML);
@@ -119,7 +122,7 @@ void print_tag()
   std::cout << "#######" << std::endl;
   std::cout << "#  #  #" << std::endl;
   std::cout << "#  #  #" << std::endl;
-  std::cout << "#     # --> positive side" << std::endl;
+  std::cout << "#  +  # --> positive side" << std::endl;
   std::cout << "#     #" << std::endl;
   std::cout << "#     #" << std::endl;
   std::cout << "#######" << std::endl;
@@ -221,8 +224,13 @@ int main(int argc, char *argv[])
                 std::getline(std::cin, s); if (s.length() > 0) marker_id=atoi(s.c_str());
                 if (marker_id < 0) break;
 
-                std::cout<<"  Marker size (cm): "; std::flush(std::cout);
-                std::getline(std::cin, s); if (s.length() > 0) st.marker_side_len = atof(s.c_str());
+                if(!st.markerExist())
+                {
+                  std::cout<<"  Marker size (cm): "; std::flush(std::cout);
+                  std::getline(std::cin, s); if (s.length() > 0) st.marker_side_len = atof(s.c_str());
+                }
+                else
+                  std::cout << "  Marker size (cm): " << st.marker_side_len << std::endl;
 
                 print_tag();
                 std::cout<<"  Marker side translation : "; std::flush(std::cout);
@@ -249,8 +257,19 @@ int main(int argc, char *argv[])
 
                 ss<<marker_id;
                 st.AddMarker(ss.str().c_str());
-                st.Save();
                 marker_id++;
+
+                std::cout<<"  Continue on same bundle [y/N] : "; std::flush(std::cout);
+                std::getline(std::cin, s);
+                if ((s.length() > 0) && (s == "y" || s == "Y"))
+                {
+                  continue;
+                }
+                else
+                {
+                  st.Save();
+                  st.resetMarker();
+                }
             }
         }
 
