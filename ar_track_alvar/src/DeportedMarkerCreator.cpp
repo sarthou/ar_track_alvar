@@ -4,6 +4,13 @@
 using namespace std;
 using namespace alvar;
 
+#ifndef COLOR_OFF
+#define COLOR_OFF     "\x1B[0m"
+#endif
+#ifndef COLOR_GREEN
+#define COLOR_GREEN   "\x1B[1;92m"
+#endif
+
 struct State {
     std::vector<IplImage*> imgs;
     std::vector<std::string> filenames;
@@ -103,13 +110,12 @@ struct State {
             for(size_t i = 0; i < imgs.size(); i++)
             {
               std::string tmp_name = filenames[i] + ".png";
-              std::cout<< "Saving: " << tmp_name <<std::endl;
+              std::cout << COLOR_GREEN << "Saving: " << tmp_name << COLOR_OFF<< std::endl;
               cvSaveImage(tmp_name.c_str(), imgs[i]);
             }
 
-            std::cout<<"Saving: "<<filenamexml.str()<<std::endl;
+            std::cout << COLOR_GREEN << "Saving: " << filenamexml.str() << COLOR_OFF << std::endl;
             multi_marker.Save(filenamexml.str().c_str(), alvar::FILE_FORMAT_XML);
-
         }
     }
 };
@@ -126,7 +132,8 @@ void print_tag()
   std::cout << "#  +  # --> positive side" << std::endl;
   std::cout << "#     #" << std::endl;
   std::cout << "#     #" << std::endl;
-  std::cout << "#######" << std::endl;
+  std::cout << "#######" << std::endl << std::endl;
+  std::cout << "/!\\ Translations are from the origin to the tag center /!\\" << std::endl;
   std::cout << std::endl;
 }
 
@@ -207,9 +214,8 @@ int main(int argc, char *argv[])
             st.marker_type = 0;
             st.marker_data_content_type = MarkerData::MARKER_CONTENT_TYPE_NUMBER;
             std::cout<<"\nPrompt marker placements interactively"<<std::endl;
-            std::cout<<"  units: "<<st.units/96.0*2.54<<" cm "<<st.units/96.0<<" inches"<<std::endl;
-            std::cout<<"  marker side: "<<st.marker_side_len<<" units"<<std::endl;
-            std::cout << std::endl;
+            std::cout<<"  Units: "<<st.units/96.0*2.54<<" cm "<<st.units/96.0<<" inches"<<std::endl;
+            std::cout<<"  Marker side: "<<st.marker_side_len<<" units"<<std::endl;
             std::cout << std::endl;
 
             bool loop=true;
@@ -221,7 +227,8 @@ int main(int argc, char *argv[])
             {
                 std::stringstream ss;
 
-                std::cout<<"  marker id (use -1 to end and ENTER to automaticaly increase) ["<<marker_id<<"]: "; std::flush(std::cout);
+                std::cout << std::endl;
+                std::cout<<"  Marker id (use -1 to end and ENTER to automaticaly increase) ["<<marker_id<<"]: "; std::flush(std::cout);
                 std::getline(std::cin, s); if (s.length() > 0) marker_id=atoi(s.c_str());
                 if (marker_id < 0) break;
 

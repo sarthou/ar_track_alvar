@@ -52,11 +52,11 @@ void Marker::VisualizeMarkerPose(IplImage *image, Camera *cam, double visualize2
 void Marker::VisualizeMarkerContent(IplImage *image, Camera *cam, double datatext_point[2], double content_point[2]) const {
 #ifdef VISUALIZE_MARKER_POINTS
 	for (size_t i=0; i<marker_allpoints_img.size(); i++) {
-		if (marker_allpoints_img[i].val == 0) 
+		if (marker_allpoints_img[i].val == 0)
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
-		else if (marker_allpoints_img[i].val == 255) 
+		else if (marker_allpoints_img[i].val == 255)
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
-		else 
+		else
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
 	}
 #endif
@@ -107,11 +107,11 @@ void Marker::VisualizeMarkerError(IplImage *image, Camera *cam, double errortext
 void MarkerData::VisualizeMarkerContent(IplImage *image, Camera *cam, double datatext_point[2], double content_point[2]) const {
 #ifdef VISUALIZE_MARKER_POINTS
 	for (size_t i=0; i<marker_allpoints_img.size(); i++) {
-		if (marker_allpoints_img[i].val == 0) 
+		if (marker_allpoints_img[i].val == 0)
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
-		else if (marker_allpoints_img[i].val == 255) 
+		else if (marker_allpoints_img[i].val == 255)
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
-		else 
+		else
 			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
 	}
 #endif
@@ -198,7 +198,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 	H.Find(marker_corners, marker_corners_img_undist);
 	H.ProjectPoints(marker_points, marker_points_img);
 	cam->Distort(marker_points_img);
-	
+
 	ros_marker_points_img.clear();
 
     // Read the content
@@ -208,9 +208,9 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 		for (int i=0; i<marker_content->width; i++) {
 			x = (int)(0.5+Limit(marker_points_img[(j*marker_content->width)+i].x, 1, gray->width-2));
 			y = (int)(0.5+Limit(marker_points_img[(j*marker_content->width)+i].y, 1, gray->height-2));
-			
+
 			marker_points_img[(j*marker_content->width)+i].val = (int)cvGetReal2D(gray, y, x);
-			
+
 			ros_marker_points_img.push_back(PointDouble(x,y));
 
 			/*
@@ -232,7 +232,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 		}
 	}
 
-	// Take few additional points from border and just 
+	// Take few additional points from border and just
 	// outside the border to make the right thresholding
 	vector<PointDouble> marker_margin_w_img(marker_margin_w.size());
 	vector<PointDouble> marker_margin_b_img(marker_margin_b.size());
@@ -447,7 +447,7 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 			{
 				marker_margin_w.push_back(pt);
 			}
-			else 
+			else
 			if ((pt.x < cx_min) || (pt.y < cy_min) ||
 				(pt.x > cx_max) || (pt.y > cy_max))
 			{
@@ -467,7 +467,7 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 			{
 				marker_margin_w.push_back(pt);
 			}
-			else 
+			else
 			if ((pt.x < cx_min) || (pt.y < cy_min) ||
 				(pt.x > cx_max) || (pt.y > cy_max))
 			{
@@ -486,8 +486,8 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 				(x > x_max) || (y > y_max))
 			{
 				marker_margin_w.push_back(pt);
-			} 
-			else 
+			}
+			else
 			if ((x < cx_min) || (y < cy_min) ||
 				(x > cx_max) || (y > cy_max))
 			{
@@ -617,7 +617,7 @@ void MarkerArtoolkit::SetContent(unsigned long _id) {
 				cvSetReal2D(marker_content, j, i, 0);
 			else if ((j == res-1) && (i == 0))
 				cvSetReal2D(marker_content, j, i, 0);
-			else if ((j == res-1) && (i == res-1)) 
+			else if ((j == res-1) && (i == res-1))
 				cvSetReal2D(marker_content, j, i, 255);
 			else {
 				if (bs.Length() && bs.pop_back())
@@ -727,14 +727,14 @@ bool MarkerData::DetectResolution(vector<PointDouble > &_marker_corners_img, Ipl
 		white=true;
 		int bc=0, wc=0, N=2;
 		for (size_t ii=0; ii<vals.size(); ii++) {
-			// change the color status if we had 
+			// change the color status if we had
 			// N subsequent pixels of the other color
 			if (vals[ii] < thresh) { bc++; wc=0; }
 			else                   { wc++; bc=0; }
-			
+
 			if (white && (bc >= N)) {
 				white=false;
-			} 
+			}
 			else if (!white && (wc >= N)) {
 				white=true;
 				white_count[i]++;
@@ -749,7 +749,7 @@ bool MarkerData::DetectResolution(vector<PointDouble > &_marker_corners_img, Ipl
 		int nof_whites = white_count[0]*2-(white?1:0); // 'white' contains middle color
 		int new_res = 2*nof_whites-1;
 		SetMarkerSize(edge_length, new_res, margin);
-	} 
+	}
 	else {
 		if (white_count[2] != white_count[3]) return false;
 		if (white_count[2] < 2) return false;
@@ -768,8 +768,8 @@ bool MarkerData::UpdateContent(vector<PointDouble > &_marker_corners_img, IplIma
 	return UpdateContentBasic(_marker_corners_img, gray, cam, frame_no);
 }
 
-int MarkerData::DecodeCode(int orientation, BitsetExt *bs, int *erroneous, int *total, 
-	unsigned char* content_type) 
+int MarkerData::DecodeCode(int orientation, BitsetExt *bs, int *erroneous, int *total,
+	unsigned char* content_type)
 {
 	// TODO: The orientation isn't fully understood?
 	//for (int j = res-1; j >= 0; j--) {
@@ -805,7 +805,7 @@ int MarkerData::DecodeCode(int orientation, BitsetExt *bs, int *erroneous, int *
 
 		for(int i = 0; i < HEADER_SIZE; i++)
 			header.push_back(bs->pop_front());
-			
+
 		errors = header.hamming_dec(8);
 		if(errors == -1){
 			//OutputDebugString("header decoding failed!!!!!\n");
@@ -822,10 +822,11 @@ int MarkerData::DecodeCode(int orientation, BitsetExt *bs, int *erroneous, int *
 	if(flags & 0x8) errors = bs->hamming_dec(16);
 	else errors = bs->hamming_dec(8);
 	*content_type = flags & 0x7;
-	
+
 	if (errors > 0) (*erroneous) += errors;
-	return errors;	
+	return errors;
 }
+
 void MarkerData::Read6bitStr(BitsetExt *bs, char *s, size_t s_max_len) {
 	deque<bool> bits = bs->GetBits();
 	deque<bool>::const_iterator iter;
@@ -867,7 +868,7 @@ void MarkerData::Read6bitStr(BitsetExt *bs, char *s, size_t s_max_len) {
 			else if (c == 076)                 s[len] = '^';
 			else if (c == 077)                 s[len] = ';';
 			else s[len] = '?';
-			len++; 
+			len++;
 			if (len >= (s_max_len-1)) break;
 			bitpos=5; c=0;
 		}
@@ -886,20 +887,20 @@ bool MarkerData::DecodeContent(int *orientation) {
 	DecodeOrientation(&erroneous, &total, orientation);
 	int err = DecodeCode(*orientation, &bs, &erroneous, &total, &content_type);
 	if(err == -1) {
-		// couldn't fix 
+		// couldn't fix
 		decode_error = DBL_MAX;
 		return false;
 	}
 
 	if(content_type == MARKER_CONTENT_TYPE_NUMBER){
 		data.id = bs.ulong();
-	} 
+	}
 	else {
 		Read6bitStr(&bs, data.str, MAX_MARKER_STRING_LEN);
 	}
 
 	decode_error = (double)(erroneous)/total;
-	
+
 	return true;
 }
 
@@ -949,7 +950,7 @@ int MarkerData::UsableDataBits(int marker_res, int hamming) {
 	if (marker_res > 5) bits -= 8; // With larger resolutions we reserve 8 bits for hamming(8,4) encoded 4 flags
 	bits -= marker_res;            // center line indicating the resolution
 	bits -= 4;                     // the four pixels indicating the orientation
-	int tail = bits % hamming; 
+	int tail = bits % hamming;
 	if (tail < 3) bits -= tail;    // hamming can't use tail pixels if there is only 2 or 1 of them
 	return bits;
 }
@@ -1041,7 +1042,7 @@ void MarkerData::SetContent(MarkerContentType _content_type, unsigned long _id, 
 			cout<<"flags enc: "; bs_flags.Output(cout); cout<<endl;
 		}
 	}
-	
+
 	// Fill in the marker content
 	deque<bool> bs(bs_flags.GetBits());
 	bs.insert(bs.end(), bs_data.GetBits().begin(), bs_data.GetBits().end());

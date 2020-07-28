@@ -83,13 +83,13 @@ void Bitset::push_back(string s) {
 bool Bitset::pop_front()
 {
 	bool ret = bits.front();
-	bits.pop_front();	
+	bits.pop_front();
 	return ret;
 }
 bool Bitset::pop_back()
 {
 	bool ret = bits.back();
-	bits.pop_back();	
+	bits.pop_back();
 	return ret;
 }
 
@@ -97,7 +97,7 @@ void Bitset::flip(size_t pos) {
 	bits[pos] = !bits[pos];
 }
 
-string Bitset::hex() 
+string Bitset::hex()
 {
 	stringstream ss;
 	ss.unsetf(std::ios_base::dec);
@@ -148,7 +148,7 @@ void BitsetExt::hamming_enc_block(unsigned long block_len, deque<bool>::iterator
 			if (verbose) cout<<"p";
 			next_parity <<= 1;
 			iter = bits.insert(iter, false);
-		} 
+		}
 		// Otherwise if this bit is 1 change all related parity bits
 		else {
 			if (iter == bits.end()) {
@@ -193,7 +193,7 @@ int BitsetExt::hamming_dec_block(unsigned long block_len, deque<bool>::iterator 
 	unsigned long next_parity=1;
 	for (unsigned long i=1; i<=block_len; i++) {
 		if (iter == bits.end()) {
-			// ttehop: 
+			// ttehop:
 			// At 3.12.2009 I changed the following line because
 			// it crashed with 7x7 markers. However, I didn't fully
 			// understand the reason why it should be so. Lets
@@ -251,6 +251,7 @@ int BitsetExt::hamming_dec_block(unsigned long block_len, deque<bool>::iterator 
 	if (verbose) cout<<" ok"<<endl;
 	return 0;
 }
+
 BitsetExt::BitsetExt() {
 	SetVerbose(false);
 }
