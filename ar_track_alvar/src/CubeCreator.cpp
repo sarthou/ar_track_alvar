@@ -19,6 +19,7 @@ struct State {
     int    marker_id;
     double posx, posy;      // The position of marker center in the given units
     double transx, transy, transz;
+    double linex1, linex2, liney1, liney2;
     int    rot[9];
     double    content_res;
     double margin_res;
@@ -36,6 +37,10 @@ struct State {
           cube_side_len(9.0),   //9cm
           marker_type(0),
           marker_id(0),
+          linex1(0),
+          linex2(0),
+          liney1(0),
+          liney2(0),
           posx(0), posy(0),
           transx(0), transy(0), transz(0),
           content_res(0),        // 0 uses default
@@ -81,25 +86,41 @@ struct State {
 
     void AddMarker(const char *id) {
         std::cout<<"ADDING MARKER "<<id<<std::endl;
-
         MarkerData md(marker_side_len, content_res, margin_res);
-        int side_len = int(marker_side_len*units+0.5);
+        int side_len = int(cube_side_len*units+.5);
         if (img == 0)
         {
             img = cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1);
+            cvSet(img, cvScalar(255));
             filename.str("");
             filename<<"MarkerData";
-            minx = (posx*units) - (marker_side_len*units/2.0);
-            miny = (posy*units) - (marker_side_len*units/2.0);
-            maxx = (posx*units) + (marker_side_len*units/2.0);
-            maxy = (posy*units) + (marker_side_len*units/2.0);
+            minx = (posx*units) - (cube_side_len*units/2.0);
+            miny = (posy*units) - (cube_side_len*units/2.0);
+            maxx = (posx*units) + (cube_side_len*units/2.0);
+            maxy = (posy*units) + (cube_side_len*units/2.0);
+            CvPoint bl = cvPoint(0,0);
+            CvPoint br = cvPoint(0,maxy-miny);
+            CvPoint tr = cvPoint(maxx-minx,maxy-miny);
+            CvPoint tl = cvPoint(maxx-minx,0);
+
+            cvLine(img, bl , br , color,8, CV_AA, 0);
+            cvLine(img, br , tr , color,8, CV_AA, 0);
+            cvLine(img, tr , tl , color,8, CV_AA, 0);
+            cvLine(img, tl , bl , color,8, CV_AA, 0);
+            CvRect roi = cvRect(0,0,1,1);
+           roi.x = int((posx*units) - (marker_side_len*units/2.0) - minx +0.5);
+           roi.y = int((posy*units) - (marker_side_len*units/2.0) - miny +0.5);
+           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
+           cvSetImageROI(img, roi);
+
+
         }
         else
         {
-          double new_minx = (posx*units) - (marker_side_len*units/2.0);
-          double new_miny = (posy*units) - (marker_side_len*units/2.0);
-          double new_maxx = (posx*units) + (marker_side_len*units/2.0);
-          double new_maxy = (posy*units) + (marker_side_len*units/2.0);
+          double new_minx = (posx*units) - (cube_side_len*units/2.0);
+          double new_miny = (posy*units) - (cube_side_len*units/2.0);
+          double new_maxx = (posx*units) + (cube_side_len*units/2.0);
+          double new_maxy = (posy*units) + (cube_side_len*units/2.0);
           if (minx < new_minx) new_minx = minx;
           if (miny < new_miny) new_miny = miny;
           if (maxx > new_maxx) new_maxx = maxx;
@@ -107,12 +128,29 @@ struct State {
           IplImage *new_img = cvCreateImage(cvSize(int(new_maxx-new_minx+0.5), int(new_maxy-new_miny+0.5)), IPL_DEPTH_8U, 1);
           cvSet(new_img, cvScalar(255));
           CvRect roi = cvRect(int(minx-new_minx+0.5), int(miny-new_miny+0.5), img->width, img->height);
+
           cvSetImageROI(new_img, roi);
           cvCopy(img, new_img);
           cvReleaseImage(&img);
           img = new_img;
-          roi.x = int((posx*units) - (marker_side_len*units/2.0) - new_minx + 0.5);
-          roi.y = int((posy*units) - (marker_side_len*units/2.0) - new_miny + 0.5);
+
+          roi.x = int((posx*units) - (cube_side_len*units/2.0) - new_minx -0.5);
+          roi.y = int((posy*units) - (cube_side_len*units/2.0) - new_miny -0.5);
+          roi.width = int(cube_side_len*units+0.5); roi.height = int(cube_side_len*units+0.5);
+          cvSetImageROI(img, roi);
+          CvPoint bl = cvPoint(0,0);
+          CvPoint br = cvPoint(0,roi.height);
+          CvPoint tr = cvPoint(roi.width,roi.height);
+          CvPoint tl = cvPoint(roi.width,0);
+
+          cvLine(img, bl , br , color,8, CV_AA, 0);
+          cvLine(img, br , tr , color,8, CV_AA, 0);
+          cvLine(img, tr , tl , color,8, CV_AA, 0);
+          cvLine(img, tl , bl , color,8, CV_AA, 0);
+
+
+          roi.x = int((posx*units) - (marker_side_len*units/2.0) - new_minx +0.5);
+          roi.y = int((posy*units) - (marker_side_len*units/2.0) - new_miny +0.5);
           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
           cvSetImageROI(img, roi);
           minx = new_minx; miny = new_miny;
@@ -131,6 +169,8 @@ struct State {
         multi_marker.PointCloudTranslate(idi, transx, transy, transz);
 
         md.ScaleMarkerToImage(img);
+
+
         cvResetImageROI(img);
     }
 
@@ -159,6 +199,12 @@ struct State {
             transx = cube_side_len/2.; transy = 0; transz = -cube_side_len/2.;
             posx = cube_side_len;
             posy = cube_side_len;
+
+            linex1 = 0 ;
+            liney1 = 0 ;
+            linex2 = 0 ;
+            liney2 = marker_side_len/2.0;
+
           }
           else if(face == 2)
           {
@@ -166,6 +212,12 @@ struct State {
             transx = 0; transy = 0; transz = -cube_side_len;
             posx = 2.*cube_side_len;
             posy = cube_side_len;
+            linex1 = 0 ;
+            liney1 = 0 ;
+            linex2 = 0 ;
+            liney2 = 0 ;
+
+
           }
           else if(face == 3)
           {
@@ -173,6 +225,9 @@ struct State {
             transx = -cube_side_len/2.; transy = 0; transz = -cube_side_len/2.;
             posx = 3.*cube_side_len;
             posy = cube_side_len;
+
+
+
           }
           else if(face == 4)
           {
@@ -187,10 +242,12 @@ struct State {
             transx = 0; transy = -cube_side_len/2.; transz = -cube_side_len/2.;
             posx = 0;
             posy = 2.*cube_side_len;
+
           }
           std::stringstream ss;
           ss<<marker_id;
           AddMarker(ss.str().c_str());
+          // AddLine();
           marker_id++;
         }
     }
@@ -264,6 +321,7 @@ int main(int argc, char *argv[])
                 if (s.length() > 0) st.marker_id=atoi(s.c_str());
                 st.AddCube();
                 st.Save();
+
             }
         }
 
