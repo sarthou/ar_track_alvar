@@ -83,41 +83,26 @@ struct State {
         std::cout<<"ADDING MARKER "<<id<<std::endl;
 
         MarkerData md(marker_side_len, content_res, margin_res);
-        int side_len = int(marker_side_len*units+0.5);
+        int side_len = int(marker_side_len*units);
+        int cube_len = int(cube_side_len*units);
         if (img == 0)
         {
-            img = cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1);
+            img = cvCreateImage(cvSize(cube_len*4+1, cube_len*3+1), IPL_DEPTH_8U, 1);
+            cvSet(img, cvScalar(255));
+            std::cout << "img size = " << img->width << " " << img->height << std::endl;
             filename.str("");
             filename<<"MarkerData";
-            minx = (posx*units) - (marker_side_len*units/2.0);
-            miny = (posy*units) - (marker_side_len*units/2.0);
-            maxx = (posx*units) + (marker_side_len*units/2.0);
-            maxy = (posy*units) + (marker_side_len*units/2.0);
         }
-        else
-        {
-          double new_minx = (posx*units) - (marker_side_len*units/2.0);
-          double new_miny = (posy*units) - (marker_side_len*units/2.0);
-          double new_maxx = (posx*units) + (marker_side_len*units/2.0);
-          double new_maxy = (posy*units) + (marker_side_len*units/2.0);
-          if (minx < new_minx) new_minx = minx;
-          if (miny < new_miny) new_miny = miny;
-          if (maxx > new_maxx) new_maxx = maxx;
-          if (maxy > new_maxy) new_maxy = maxy;
-          IplImage *new_img = cvCreateImage(cvSize(int(new_maxx-new_minx+0.5), int(new_maxy-new_miny+0.5)), IPL_DEPTH_8U, 1);
-          cvSet(new_img, cvScalar(255));
-          CvRect roi = cvRect(int(minx-new_minx+0.5), int(miny-new_miny+0.5), img->width, img->height);
-          cvSetImageROI(new_img, roi);
-          cvCopy(img, new_img);
-          cvReleaseImage(&img);
-          img = new_img;
-          roi.x = int((posx*units) - (marker_side_len*units/2.0) - new_minx + 0.5);
-          roi.y = int((posy*units) - (marker_side_len*units/2.0) - new_miny + 0.5);
-          roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
-          cvSetImageROI(img, roi);
-          minx = new_minx; miny = new_miny;
-          maxx = new_maxx; maxy = new_maxy;
-        }
+
+        CvRect roi;
+        roi.x = int((posx*units) + (((cube_side_len - marker_side_len) * units) / 2.0));
+        roi.y = int((posy*units) + (((cube_side_len - marker_side_len) * units) / 2.0));
+        roi.width = int(marker_side_len*units);
+        roi.height = int(marker_side_len*units);
+        std::cout << "pose = " << posx << " " << posy << std::endl;
+        std::cout << "roi pose = " << roi.x << " " << roi.y << std::endl;
+        std::cout << "roi size = " << roi.width << " " << roi.height << std::endl;
+        cvSetImageROI(img, roi);
 
         int idi = atoi(id);
         md.SetContent(marker_data_content_type, idi, 0);
