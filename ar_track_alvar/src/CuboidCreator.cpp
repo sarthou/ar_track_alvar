@@ -5,6 +5,11 @@
 
 using namespace std;
 using namespace alvar;
+//   y <--------
+//             |
+//             |
+//             |x
+//             V
 
 struct State {
     IplImage *img;
@@ -90,62 +95,40 @@ struct State {
     void AddMarker(const char *id) {
         std::cout<<"ADDING MARKER "<<id<<std::endl;
         MarkerData md(marker_side_len, content_res, margin_res);
-
+        minx = 0;
+        miny = 0;
+        maxx =(2.*cuboid_side_hgt+2.*cuboid_side_wid)*units+0.5;
+        maxy = (cuboid_side_len+2.*cuboid_side_wid)*units+0.5;
         if (img == 0)
         {
-            img = cvCreateImage(cvSize(int(side_len*units+0.5),
-                                      int(side_hgt*units+.5)), IPL_DEPTH_8U, 1);
+            // img = cvCreateImage(cvSize(int(side_len*units+0.5),
+            //                           int(side_hgt*units+.5)), IPL_DEPTH_8U, 1);
+
+
+            img = cvCreateImage(cvSize(int(maxx),
+                                    int(maxy)), IPL_DEPTH_8U, 1);
+
             cvSet(img, cvScalar(255));
             filename.str("");
             filename<<"MarkerData";
-            minx = (posx*units) - (side_len*units/2.0);
-            miny = (posy*units) - (side_hgt*units/2.0);
-            maxx = (posx*units) + (side_len*units/2.0);
-            maxy = (posy*units) + (side_hgt*units/2.0);
-            CvPoint bl = cvPoint(0,0);
-            CvPoint br = cvPoint(0,maxy-miny);
-            CvPoint tr = cvPoint(maxx-minx,maxy-miny);
-            CvPoint tl = cvPoint(maxx-minx,0);
-
-            cvLine(img, bl , br , color,8, CV_AA, 0);
-            cvLine(img, br , tr , color,8, CV_AA, 0);
-            cvLine(img, tr , tl , color,8, CV_AA, 0);
-            cvLine(img, tl , bl , color,8, CV_AA, 0);
-            CvRect roi = cvRect(0,0,1,1);
-           roi.x = int((posx*units) - (marker_side_len*units/2.0) - minx +0.5);
-           roi.y = int((posy*units) - (marker_side_len*units/2.0) - miny +0.5);
-           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
-           cvSetImageROI(img, roi);
+                }
 
 
-        }
-        else
-        {
-          double new_minx = (posx*units) - (side_len*units/2.0);
-          double new_miny = (posy*units) - (side_hgt*units/2.0);
-          double new_maxx = (posx*units) + (side_len*units/2.0);
-          double new_maxy = (posy*units) + (side_hgt*units/2.0);
-          if (minx < new_minx) new_minx = minx;
-          if (miny < new_miny) new_miny = miny;
-          if (maxx > new_maxx) new_maxx = maxx;
-          if (maxy > new_maxy) new_maxy = maxy;
-          IplImage *new_img = cvCreateImage(cvSize(int(new_maxx-new_minx+0.5), int(new_maxy-new_miny+0.5)), IPL_DEPTH_8U, 1);
-          cvSet(new_img, cvScalar(255));
-          CvRect roi = cvRect(int(minx-new_minx+0.5), int(miny-new_miny+0.5), img->width, img->height);
+          CvRect roi = cvRect(0,0,1,1);
+          //
+          // cvSetImageROI(img, roi);
+          // cvCopy(img, new_img);
+          // cvReleaseImage(&img);
+          // img = new_img;
 
-          cvSetImageROI(new_img, roi);
-          cvCopy(img, new_img);
-          cvReleaseImage(&img);
-          img = new_img;
-
-          roi.x = int((posx*units) - (side_len*units/2.0) - new_minx -0.5);
-          roi.y = int((posy*units) - (side_hgt*units/2.0) - new_miny -0.5);
+          roi.x = int((posx*units) - (side_len*units/2.0) - minx -0.5);
+          roi.y = int((posy*units) - (side_hgt*units/2.0) - miny -0.5);
           roi.width = int(side_len*units+0.5); roi.height = int(side_hgt*units+0.5);
           cvSetImageROI(img, roi);
-          CvPoint bl = cvPoint(0,0);
-          CvPoint br = cvPoint(0,roi.height);
-          CvPoint tr = cvPoint(roi.width,roi.height);
-          CvPoint tl = cvPoint(roi.width,0);
+          CvPoint tr = cvPoint(0,0);
+          CvPoint tl = cvPoint(0,roi.height);
+          CvPoint bl = cvPoint(roi.width,roi.height);
+          CvPoint br = cvPoint(roi.width,0);
 
           cvLine(img, bl , br , color,8, CV_AA, 0);
           cvLine(img, br , tr , color,8, CV_AA, 0);
@@ -153,13 +136,11 @@ struct State {
           cvLine(img, tl , bl , color,8, CV_AA, 0);
 
 
-          roi.x = int((posx*units) - (marker_side_len*units/2.0) - new_minx +0.5);
-          roi.y = int((posy*units) - (marker_side_len*units/2.0) - new_miny +0.5);
+          roi.x = int((posx*units) - (marker_side_len*units/2.0) - minx +0.5);
+          roi.y = int((posy*units) - (marker_side_len*units/2.0) - miny +0.5);
           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
           cvSetImageROI(img, roi);
-          minx = new_minx; miny = new_miny;
-          maxx = new_maxx; maxy = new_maxy;
-        }
+
 
         int idi = atoi(id);
         md.SetContent(marker_data_content_type, idi, 0);
@@ -195,8 +176,8 @@ struct State {
           {
             assign_rot(0,0,0, 0,0,0, 0,0,0);
             transx = 0; transy = 0; transz = 0;
-            posx = 0;
-            posy = (cuboid_side_len + cuboid_side_wid )/2.0;
+            posx =  cuboid_side_hgt /2.0;
+            posy =(cuboid_side_len )/2.0 + cuboid_side_wid;
             side_hgt = cuboid_side_len;
             side_len = cuboid_side_hgt;
           }
@@ -204,8 +185,8 @@ struct State {
           {
             assign_rot(0,0,-1, 0,1,0, 1,0,0);
             transx = cuboid_side_len/2.; transy = 0; transz = -cuboid_side_hgt/2.;
-            posx = (cuboid_side_hgt + cuboid_side_wid )/2.0;
-            posy = (cuboid_side_len + cuboid_side_wid )/2.0;
+            posx = (cuboid_side_wid )/2.0 + cuboid_side_hgt ;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
             side_hgt = cuboid_side_len;
             side_len = cuboid_side_wid;
 
@@ -217,8 +198,8 @@ struct State {
           {
             assign_rot(-1,0,0, 0,1,0, 0,0,-1);
             transx = 0; transy = 0; transz = -cuboid_side_hgt;
-            posx = (cuboid_side_hgt + cuboid_side_wid );
-            posy = (cuboid_side_len + cuboid_side_wid )/2.0;
+            posx = (cuboid_side_hgt + cuboid_side_wid ) + cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
             side_hgt = cuboid_side_len;
             side_len = cuboid_side_hgt;
 
@@ -228,8 +209,8 @@ struct State {
           {
             assign_rot(0,0,1, 0,1,0, -1,0,0);
             transx = -cuboid_side_len/2.; transy = 0; transz = -cuboid_side_hgt/2.;
-            posx = 3.*(cuboid_side_hgt + cuboid_side_wid )/2.0;
-            posy = (cuboid_side_len + cuboid_side_wid )/2.0;
+            posx = 3.*(cuboid_side_hgt + cuboid_side_wid )/2.0+ cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
             side_hgt = cuboid_side_len;
             side_len = cuboid_side_wid;
           }
@@ -237,8 +218,8 @@ struct State {
           {
             assign_rot(1,0,0, 0,0,-1, 0,1,0);
             transx = 0; transy = cuboid_side_wid/2.; transz = -cuboid_side_hgt/2.;
-            posx = 0;
-            posy = 0;
+            posx =  cuboid_side_hgt /2.0;
+            posy = cuboid_side_wid/2.;
             side_hgt = cuboid_side_wid;
             side_len = cuboid_side_hgt;
           }
@@ -246,8 +227,8 @@ struct State {
           {
             assign_rot(1,0,0, 0,0,1, 0,-1,0);
             transx = 0; transy = -cuboid_side_wid/2.; transz = -cuboid_side_hgt/2.;
-            posx = 0;
-            posy = (cuboid_side_len + cuboid_side_wid );
+            posx =  cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len + 3*cuboid_side_wid/2. );
             side_hgt = cuboid_side_wid;
             side_len = cuboid_side_hgt;
 
