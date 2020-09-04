@@ -1,8 +1,15 @@
 #include "ar_track_alvar/MultiMarker.h"
 #include "ar_track_alvar/Color.h"
 #include "highgui.h"
+#include "ar_track_alvar/Draw.h"
+
 using namespace std;
 using namespace alvar;
+//   y <--------
+//             |
+//             |
+//             |x
+//             V
 
 struct State {
     IplImage *img;
@@ -14,12 +21,14 @@ struct State {
     bool   prompt;
     double units;           // how many pixels per one unit
     double marker_side_len; // marker side len in current units
-    double cube_side_len; // marker side len in current units
+    double cuboid_side_len; // cuboid side len in current units
+    double cuboid_side_wid; // cuboid side width in current units
+    double cuboid_side_hgt; // cuboid side height in current units
     int    marker_type;     // 0:MarkerData, 1:ArToolkit
     int    marker_id;
     double posx, posy;      // The position of marker center in the given units
     double transx, transy, transz;
-    double linex1, linex2, liney1, liney2;
+    double side_len, side_hgt; // The size of the current ROI
     int    rot[9];
     double    content_res;
     double margin_res;
@@ -34,13 +43,12 @@ struct State {
           prompt(false),
           units(96.0/2.54),      // cm assuming 96 dpi
           marker_side_len(9.0),  // 9 cm
-          cube_side_len(9.0),   //9cm
+          cuboid_side_len(9.0),   //9cm
+          cuboid_side_wid(9.0),   //9cm
+          cuboid_side_hgt(9.0),   //9cm
           marker_type(0),
           marker_id(0),
-          linex1(0),
-          linex2(0),
-          liney1(0),
-          liney2(0),
+          side_len(0),side_hgt(0),
           posx(0), posy(0),
           transx(0), transy(0), transz(0),
           content_res(0),        // 0 uses default
@@ -87,61 +95,40 @@ struct State {
     void AddMarker(const char *id) {
         std::cout<<"ADDING MARKER "<<id<<std::endl;
         MarkerData md(marker_side_len, content_res, margin_res);
-        int side_len = int(cube_side_len*units+.5);
+        minx = 0;
+        miny = 0;
+        maxx =(2.*cuboid_side_hgt+2.*cuboid_side_wid)*units+0.5;
+        maxy = (cuboid_side_len+2.*cuboid_side_wid)*units+0.5;
         if (img == 0)
         {
-            img = cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1);
+            // img = cvCreateImage(cvSize(int(side_len*units+0.5),
+            //                           int(side_hgt*units+.5)), IPL_DEPTH_8U, 1);
+
+
+            img = cvCreateImage(cvSize(int(maxx),
+                                    int(maxy)), IPL_DEPTH_8U, 1);
+
             cvSet(img, cvScalar(255));
             filename.str("");
             filename<<"MarkerData";
-            minx = (posx*units) - (cube_side_len*units/2.0);
-            miny = (posy*units) - (cube_side_len*units/2.0);
-            maxx = (posx*units) + (cube_side_len*units/2.0);
-            maxy = (posy*units) + (cube_side_len*units/2.0);
-            CvPoint bl = cvPoint(0,0);
-            CvPoint br = cvPoint(0,maxy-miny);
-            CvPoint tr = cvPoint(maxx-minx,maxy-miny);
-            CvPoint tl = cvPoint(maxx-minx,0);
-
-            cvLine(img, bl , br , color,8, CV_AA, 0);
-            cvLine(img, br , tr , color,8, CV_AA, 0);
-            cvLine(img, tr , tl , color,8, CV_AA, 0);
-            cvLine(img, tl , bl , color,8, CV_AA, 0);
-            CvRect roi = cvRect(0,0,1,1);
-           roi.x = int((posx*units) - (marker_side_len*units/2.0) - minx +0.5);
-           roi.y = int((posy*units) - (marker_side_len*units/2.0) - miny +0.5);
-           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
-           cvSetImageROI(img, roi);
+                }
 
 
-        }
-        else
-        {
-          double new_minx = (posx*units) - (cube_side_len*units/2.0);
-          double new_miny = (posy*units) - (cube_side_len*units/2.0);
-          double new_maxx = (posx*units) + (cube_side_len*units/2.0);
-          double new_maxy = (posy*units) + (cube_side_len*units/2.0);
-          if (minx < new_minx) new_minx = minx;
-          if (miny < new_miny) new_miny = miny;
-          if (maxx > new_maxx) new_maxx = maxx;
-          if (maxy > new_maxy) new_maxy = maxy;
-          IplImage *new_img = cvCreateImage(cvSize(int(new_maxx-new_minx+0.5), int(new_maxy-new_miny+0.5)), IPL_DEPTH_8U, 1);
-          cvSet(new_img, cvScalar(255));
-          CvRect roi = cvRect(int(minx-new_minx+0.5), int(miny-new_miny+0.5), img->width, img->height);
+          CvRect roi = cvRect(0,0,1,1);
+          //
+          // cvSetImageROI(img, roi);
+          // cvCopy(img, new_img);
+          // cvReleaseImage(&img);
+          // img = new_img;
 
-          cvSetImageROI(new_img, roi);
-          cvCopy(img, new_img);
-          cvReleaseImage(&img);
-          img = new_img;
-
-          roi.x = int((posx*units) - (cube_side_len*units/2.0) - new_minx -0.5);
-          roi.y = int((posy*units) - (cube_side_len*units/2.0) - new_miny -0.5);
-          roi.width = int(cube_side_len*units+0.5); roi.height = int(cube_side_len*units+0.5);
+          roi.x = int((posx*units) - (side_len*units/2.0) - minx -0.5);
+          roi.y = int((posy*units) - (side_hgt*units/2.0) - miny -0.5);
+          roi.width = int(side_len*units+0.5); roi.height = int(side_hgt*units+0.5);
           cvSetImageROI(img, roi);
-          CvPoint bl = cvPoint(0,0);
-          CvPoint br = cvPoint(0,roi.height);
-          CvPoint tr = cvPoint(roi.width,roi.height);
-          CvPoint tl = cvPoint(roi.width,0);
+          CvPoint tr = cvPoint(0,0);
+          CvPoint tl = cvPoint(0,roi.height);
+          CvPoint bl = cvPoint(roi.width,roi.height);
+          CvPoint br = cvPoint(roi.width,0);
 
           cvLine(img, bl , br , color,8, CV_AA, 0);
           cvLine(img, br , tr , color,8, CV_AA, 0);
@@ -149,13 +136,11 @@ struct State {
           cvLine(img, tl , bl , color,8, CV_AA, 0);
 
 
-          roi.x = int((posx*units) - (marker_side_len*units/2.0) - new_minx +0.5);
-          roi.y = int((posy*units) - (marker_side_len*units/2.0) - new_miny +0.5);
+          roi.x = int((posx*units) - (marker_side_len*units/2.0) - minx +0.5);
+          roi.y = int((posy*units) - (marker_side_len*units/2.0) - miny +0.5);
           roi.width = int(marker_side_len*units+0.5); roi.height = int(marker_side_len*units+0.5);
           cvSetImageROI(img, roi);
-          minx = new_minx; miny = new_miny;
-          maxx = new_maxx; maxy = new_maxy;
-        }
+
 
         int idi = atoi(id);
         md.SetContent(marker_data_content_type, idi, 0);
@@ -174,7 +159,8 @@ struct State {
         cvResetImageROI(img);
     }
 
-    void AddCube()
+
+    void Addcuboid()
     {
         if (img)
         {
@@ -190,66 +176,74 @@ struct State {
           {
             assign_rot(0,0,0, 0,0,0, 0,0,0);
             transx = 0; transy = 0; transz = 0;
-            posx = 0;
-            posy = cube_side_len;
+            posx =  cuboid_side_hgt /2.0;
+            posy =(cuboid_side_len )/2.0 + cuboid_side_wid;
+            side_hgt = cuboid_side_len;
+            side_len = cuboid_side_hgt;
           }
           else if(face == 1)
           {
             assign_rot(0,0,-1, 0,1,0, 1,0,0);
-            transx = cube_side_len/2.; transy = 0; transz = -cube_side_len/2.;
-            posx = cube_side_len;
-            posy = cube_side_len;
+            transx = cuboid_side_len/2.; transy = 0; transz = -cuboid_side_hgt/2.;
+            posx = (cuboid_side_wid )/2.0 + cuboid_side_hgt ;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
+            side_hgt = cuboid_side_len;
+            side_len = cuboid_side_wid;
 
-            linex1 = 0 ;
-            liney1 = 0 ;
-            linex2 = 0 ;
-            liney2 = marker_side_len/2.0;
+
+
 
           }
           else if(face == 2)
           {
             assign_rot(-1,0,0, 0,1,0, 0,0,-1);
-            transx = 0; transy = 0; transz = -cube_side_len;
-            posx = 2.*cube_side_len;
-            posy = cube_side_len;
-            linex1 = 0 ;
-            liney1 = 0 ;
-            linex2 = 0 ;
-            liney2 = 0 ;
+            transx = 0; transy = 0; transz = -cuboid_side_hgt;
+            posx = (cuboid_side_hgt + cuboid_side_wid ) + cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
+            side_hgt = cuboid_side_len;
+            side_len = cuboid_side_hgt;
 
 
           }
           else if(face == 3)
           {
             assign_rot(0,0,1, 0,1,0, -1,0,0);
-            transx = -cube_side_len/2.; transy = 0; transz = -cube_side_len/2.;
-            posx = 3.*cube_side_len;
-            posy = cube_side_len;
-
-
-
+            transx = -cuboid_side_len/2.; transy = 0; transz = -cuboid_side_hgt/2.;
+            posx = 3.*(cuboid_side_hgt + cuboid_side_wid )/2.0+ cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len )/2.0 + cuboid_side_wid;
+            side_hgt = cuboid_side_len;
+            side_len = cuboid_side_wid;
           }
           else if(face == 4)
           {
             assign_rot(1,0,0, 0,0,-1, 0,1,0);
-            transx = 0; transy = cube_side_len/2.; transz = -cube_side_len/2.;
-            posx = 0;
-            posy = 0;
+            transx = 0; transy = cuboid_side_wid/2.; transz = -cuboid_side_hgt/2.;
+            posx =  cuboid_side_hgt /2.0;
+            posy = cuboid_side_wid/2.;
+            side_hgt = cuboid_side_wid;
+            side_len = cuboid_side_hgt;
           }
           else if(face == 5)
           {
             assign_rot(1,0,0, 0,0,1, 0,-1,0);
-            transx = 0; transy = -cube_side_len/2.; transz = -cube_side_len/2.;
-            posx = 0;
-            posy = 2.*cube_side_len;
+            transx = 0; transy = -cuboid_side_wid/2.; transz = -cuboid_side_hgt/2.;
+            posx =  cuboid_side_hgt /2.0;
+            posy = (cuboid_side_len + 3*cuboid_side_wid/2. );
+            side_hgt = cuboid_side_wid;
+            side_len = cuboid_side_hgt;
+
 
           }
+
           std::stringstream ss;
           ss<<marker_id;
+
           AddMarker(ss.str().c_str());
-          // AddLine();
           marker_id++;
+
         }
+
+
     }
 
     void Save()
@@ -302,8 +296,10 @@ int main(int argc, char *argv[])
                 st.units = (96.0/2.54);
             else if (strcmp(argv[i],"-sm") == 0)
                 st.marker_side_len = atof(argv[++i]);
-            else if (strcmp(argv[i],"-sc") == 0)
-                st.cube_side_len = atof(argv[++i]);
+            else if (strcmp(argv[i],"-sc") == 0) {
+                st.cuboid_side_len = atof(argv[++i]);
+                st.cuboid_side_hgt = atof(argv[++i]);
+                st.cuboid_side_wid = atof(argv[++i]);}
             else if (strcmp(argv[i],"-r") == 0)
                 st.content_res = atoi(argv[++i]);
             else if (strcmp(argv[i],"-m") == 0)
@@ -319,7 +315,8 @@ int main(int argc, char *argv[])
             {
                 std::string s = argv[i];
                 if (s.length() > 0) st.marker_id=atoi(s.c_str());
-                st.AddCube();
+                st.Addcuboid();
+
                 st.Save();
 
             }
@@ -331,11 +328,11 @@ int main(int argc, char *argv[])
             std::string filename(argv[0]);
             filename = filename.substr(filename.find_last_of('\\') + 1);
             std::cout << "#=============#" << std::endl;
-            std::cout << "= CubeCreator =" << std::endl;
+            std::cout << "= cuboidCreator =" << std::endl;
             std::cout << "#=============#" << std::endl;
             std::cout << std::endl;
             std::cout << "Description:" << std::endl;
-            std::cout << "  This is a utility to generate pattern with markers for to create cubes." << std::endl;
+            std::cout << "  This is a utility to generate pattern with markers for to create cuboids." << std::endl;
             std::cout << "  This will generate both the PNG and XML files where you run this utility." << std::endl;
             std::cout << "  Once the PNG is printed, do not cut all markers independently, but only the entire pattern." << std::endl;
             std::cout << std::endl;
@@ -347,11 +344,11 @@ int main(int argc, char *argv[])
             std::cout << "    -uin              use inches as units (assuming 96 dpi)" << std::endl;
             std::cout << "    -ucm              use cm's as units (assuming 96 dpi) <default>" << std::endl;
             std::cout << "    -sm 5.0           use marker size 5.0x5.0 units (default 9.0x9.0)" << std::endl;
-            std::cout << "    -sc 5.0           use cube size 5.0x5.0 units (default 9.0x9.0)" << std::endl;
+            std::cout << "    -sc 5.0  4.0 3.0  use cuboid size 5.0x4.0x3.0 units (default 9.0x9.0x9.0)" << std::endl;
             std::cout << "    -r 5              marker content resolution -- 0 uses default" << std::endl;
             std::cout << "    -m 1.0            marker margin resolution -- 0 uses default" << std::endl;
             std::cout << "    -p                prompt marker placements interactively from the user" << std::endl;
-            std::cout << "    -c B              cube color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black" << std::endl;
+            std::cout << "    -c B              cuboid color :  B:blue R:red G:green P:pink S:sky Y:yellow -- default black" << std::endl;
             std::cout << std::endl;
 
             // Interactive stuff here
@@ -375,11 +372,26 @@ int main(int argc, char *argv[])
                 std::cout<<"  Marker size (cm): "; std::flush(std::cout);
                 std::getline(std::cin, s); if (s.length() > 0) st.marker_side_len = atof(s.c_str());
 
-                st.cube_side_len = st.marker_side_len;
-                std::cout<<"  Cube size (cm): "; std::flush(std::cout);
+                st.cuboid_side_len = st.marker_side_len;
+                std::cout<<"  cuboid length (cm): "; std::flush(std::cout);
                 std::getline(std::cin, s);
                 if (s.length() > 0)
-                    st.cube_side_len = atof(s.c_str());
+                    st.cuboid_side_len = atof(s.c_str());
+
+
+
+                st.cuboid_side_hgt = st.marker_side_len;
+                std::cout<<"  cuboid height (cm): "; std::flush(std::cout);
+                std::getline(std::cin, s);
+                if (s.length() > 0)
+                    st.cuboid_side_hgt = atof(s.c_str());
+
+                st.cuboid_side_wid = st.marker_side_len;
+                std::cout<<"  cuboid width (cm): "; std::flush(std::cout);
+                std::getline(std::cin, s);
+                if (s.length() > 0)
+                    st.cuboid_side_wid = atof(s.c_str());
+
 
                 std::cout<<"  Colors :" << std::endl;
                 std::cout<<"  B - blue" << std::endl;
@@ -394,8 +406,9 @@ int main(int argc, char *argv[])
                 col::color_t tmp_color = col::get_color(s[0]);
                 st.color = col::get_color(tmp_color);
 
-                st.AddCube();
+                st.Addcuboid();
                 st.Save();
+
                 st.multi_marker = MultiMarker();
             }
         }

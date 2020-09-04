@@ -150,6 +150,10 @@ add_executable(createCube src/CubeCreator.cpp)
 target_link_libraries(createCube ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createCube ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
+add_executable(createCuboid src/CuboidCreator.cpp)
+target_link_libraries(createCuboid ar_track_alvar ${catkin_LIBRARIES})
+add_dependencies(createCuboid ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
+
 add_executable(createDeportedMarker src/DeportedMarkerCreator.cpp)
 target_link_libraries(createDeportedMarker ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(createDeportedMarker ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
