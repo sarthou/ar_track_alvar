@@ -300,6 +300,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       }
 
       //Publish the marker messages
+      arPoseMarkers_.header.stamp = image_msg->header.stamp;
       arMarkerPub_.publish (arPoseMarkers_);
     }
     catch (cv_bridge::Exception& e){

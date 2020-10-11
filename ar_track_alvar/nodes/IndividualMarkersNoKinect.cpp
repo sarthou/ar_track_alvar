@@ -202,11 +202,13 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 				//Create the pose marker messages
 				ar_track_alvar_msgs::AlvarMarker ar_pose_marker;
 				tf::poseTFToMsg (tagPoseOutput, ar_pose_marker.pose.pose);
-      			ar_pose_marker.header.frame_id = output_frame;
+      		ar_pose_marker.header.frame_id = output_frame;
 			    ar_pose_marker.header.stamp = image_msg->header.stamp;
 			    ar_pose_marker.id = id;
 			    arPoseMarkers_.markers.push_back (ar_pose_marker);
 			}
+			
+			arPoseMarkers_.header.stamp = image_msg->header.stamp;
 			arMarkerPub_.publish (arPoseMarkers_);
 		}
         catch (cv_bridge::Exception& e){

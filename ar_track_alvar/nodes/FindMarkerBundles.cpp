@@ -653,15 +653,16 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
 
       //Draw the main markers, whether they are visible or not -- but only if at least 1 marker from their bundle is currently seen
       for(int i=0; i<n_bundles; i++)
-	{
-	  if(bundles_seen[i] > 0){
-	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, bundles_seen[i]);
-	    rvizMarkerPub_.publish (rvizMarker);
-	    arPoseMarkers_.markers.push_back (ar_pose_marker);
-	  }
-	}
+    	{
+    	  if(bundles_seen[i] > 0){
+    	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, bundles_seen[i]);
+    	    rvizMarkerPub_.publish (rvizMarker);
+    	    arPoseMarkers_.markers.push_back (ar_pose_marker);
+    	  }
+    	}
 
       //Publish the marker messages
+      arPoseMarkers_.header.stamp = image_msg->header.stamp;
       arMarkerPub_.publish (arPoseMarkers_);
     }
     catch (cv_bridge::Exception& e){
