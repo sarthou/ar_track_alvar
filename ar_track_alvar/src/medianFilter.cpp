@@ -29,14 +29,15 @@
  */
 
 /**
- * \file 
- * 
+ * \file
+ *
  * N-dimensional median filter for marker poses
  *
  * \author Scott Niekum
  */
 
 #include <ar_track_alvar/filter/medianFilter.h>
+#include <tf/tf.h>
 
 namespace ar_track_alvar
 {
@@ -54,37 +55,46 @@ namespace ar_track_alvar
       median_ind = (median_ind+1) % median_n;
   }
 
-  void MedianFilter::getMedian(Pose &ret_pose){
-    if(!median_init){
+  void MedianFilter::getMedian(Pose &ret_pose)
+  {
+    if(!median_init)
+    {
       if(median_ind == median_n-1)
-	median_init = true;
+        median_init = true;
       ret_pose = median_poses[median_ind-1];
     }
-
-    else{
+    else
+    {
       double min_dist = 0;
       int min_ind = 0;
-      for(int i=0; i<median_n; i++){
-	double total_dist = 0;
-	for(int j=0; j<median_n; j++){
-	  total_dist += pow(median_poses[i].translation[0] - median_poses[j].translation[0], 2);
-	  total_dist += pow(median_poses[i].translation[1] - median_poses[j].translation[1], 2);
-	  total_dist += pow(median_poses[i].translation[2] - median_poses[j].translation[2], 2);
-	  total_dist += pow(median_poses[i].quaternion[0] - median_poses[j].quaternion[0], 2);
-	  total_dist += pow(median_poses[i].quaternion[1] - median_poses[j].quaternion[1], 2);
-	  total_dist += pow(median_poses[i].quaternion[2] - median_poses[j].quaternion[2], 2);
-	  total_dist += pow(median_poses[i].quaternion[3] - median_poses[j].quaternion[3], 2);
-	}
-	if(i==0) min_dist = total_dist;
-	else{
-	  if(total_dist < min_dist){
-	    min_dist = total_dist;
-	    min_ind = i;
-	  }
-	}
+      for(int i=0; i<median_n; i++)
+      {
+      	double total_dist = 0;
+        double total_quat_dist = 0;
+      	for(int j=0; j<median_n; j++)
+        {
+      	  total_dist += pow(median_poses[i].translation[0] - median_poses[j].translation[0], 2);
+      	  total_dist += pow(median_poses[i].translation[1] - median_poses[j].translation[1], 2);
+      	  total_dist += pow(median_poses[i].translation[2] - median_poses[j].translation[2], 2);
+          tf::Quaternion q1(median_poses[i].quaternion[1], median_poses[i].quaternion[2],
+		 	                      median_poses[i].quaternion[3], median_poses[i].quaternion[0]);
+          tf::Quaternion q2(median_poses[j].quaternion[1], median_poses[j].quaternion[2],
+		 	                      median_poses[j].quaternion[3], median_poses[j].quaternion[0]);
+          total_dist += std::abs(q1.angle(q2));
+      	}
+      	if(i==0)
+          min_dist = total_dist;
+      	else
+        {
+      	  if(total_dist < min_dist)
+          {
+      	    min_dist = total_dist;
+      	    min_ind = i;
+      	  }
+      	}
       }
       ret_pose = median_poses[min_ind];
     }
   }
-  
+
 } //namespace
