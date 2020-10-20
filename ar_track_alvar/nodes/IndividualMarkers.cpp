@@ -315,7 +315,18 @@ void GetMarkerPoses(IplImage *image, ARCloud &cloud) {
     }
 }
 
-
+template<typename T>
+void transformPointCloud(const sensor_msgs::PointCloud2 &cloud,
+                         pcl::PointCloud<T> &pcl_cloud,
+                         sensor_msgs::Image &image)
+{
+  pcl::PCLPointCloud2 pcl_cloud2;
+  pcl_conversions::toPCL(cloud, pcl_cloud2);
+  pcl::fromPCLPointCloud2(pcl_cloud2, pcl_cloud);
+  pcl::PCLImage pcl_image;
+  pcl::toPCLPointCloud2(pcl_cloud2, pcl_image);
+  pcl_conversions::moveFromPCL(pcl_image, image);
+}
 
 void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
 {
@@ -328,11 +339,11 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
   //If we've already gotten the cam info, then go ahead
   if(cam->getCamInfo_){
     //Convert cloud to PCL
-    ARCloud cloud;
-    pcl::fromROSMsg(*msg, cloud);
 
-    //Get an OpenCV image from the cloud
-    pcl::toROSMsg (*msg, *image_msg);
+    ARCloud cloud;
+    //Convert cloud to PCL and
+    //get an OpenCV image from the cloud
+    transformPointCloud(*msg, cloud, *image_msg);
     image_msg->header.stamp = msg->header.stamp;
     image_msg->header.frame_id = msg->header.frame_id;
 
