@@ -78,15 +78,15 @@ public:
 	/** \brief Clear the markers that are tracked */
 	void TrackMarkersReset();
 
-	/** \brief Add markers to be tracked 
-	 * Sometimes application or e.g. the \e MultiMarker implementation knows 
+	/** \brief Add markers to be tracked
+	 * Sometimes application or e.g. the \e MultiMarker implementation knows
 	 * more about marker locations. Then this method can be used after \e Detect
 	 * to indicate where additional trackable markers could be found. The
 	 * \e DetectAdditional is called for tracking these.
 	 */
 	void TrackMarkerAdd(int id, PointDouble corners[4]);
 
-	/** Set the default marker size to be used for all markers unless 
+	/** Set the default marker size to be used for all markers unless
 	* \param _edge_length Length of the marker's edge in whatever units you are using (e.g. cm)
 	* \param _res The marker content resolution in pixels. By default we use 5x5 markers. If you use 0 with \e MarkerData, the marker resolution is detected automatically.
 	* \param _margin The marker margin resolution in pixels (The actual captured marker image has pixel resolution of _margin+_res+_margin)
@@ -94,6 +94,8 @@ public:
     * \note The default marker content resolution (_res) of 5 can only detect marker ids from 0 to 255. For larger marker ids, you need to increase the marker content resolution accordingly.
 	*/
 	void SetMarkerSize(double _edge_length = 1, int _res = 5, double _margin = 2);
+
+	double getMarkerSize() { return edge_length; }
 
 	/** Set marker size for specified marker id. This needs to be called after setting the default marker size.
 	* \param id The specified marker id
@@ -107,12 +109,12 @@ public:
 	void SetOptions(bool _detect_pose_grayscale=false);
 
 	/**
-	 * \brief \e Detect \e Marker 's from \e image 
+	 * \brief \e Detect \e Marker 's from \e image
 	 *
 	 * The coordinates are little tricky. Here is a short summary.
-	 * 
+	 *
 	 * - Image (top-left origin).
-	 * - The marker corners in the image are searched in sub-pixel accuracy in 
+	 * - The marker corners in the image are searched in sub-pixel accuracy in
 	 *   counter-clockwise order starting from "lower-left" corner.
 	 * - The corresponding marker corners and marker points are in marker coordinates
 	 *   (x is to east, y is to north, and z is up from the marker)

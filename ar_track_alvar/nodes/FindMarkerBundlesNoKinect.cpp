@@ -62,13 +62,12 @@ ros::Publisher rvizMarkerPub_;
 ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
 tf::TransformListener *tf_listener;
 tf::TransformBroadcaster *tf_broadcaster;
-MarkerDetector<MarkerData> marker_detector;
+std::vector<MarkerDetector<MarkerData>> marker_detectors;
 MultiMarkerBundle **multi_marker_bundles=NULL;
 Pose *bundlePoses;
 int *master_id;
 bool *bundles_seen;
 std::vector<int> *bundle_indices;
-std::set<double> markers_size;
 bool init = true;
 
 double marker_size;
@@ -85,30 +84,21 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
 
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
-void GetMultiMarkerPoses(IplImage *image, double m_size) {
+void GetMultiMarkerPoses(IplImage *image, MarkerDetector<MarkerData>* marker_detector) {
 
-  if(m_size != 0)
-    marker_detector.SetMarkerSize(m_size);
-  else
-    marker_detector.SetMarkerSize(marker_size);
-
-  if (marker_detector.Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true))
+  if (marker_detector->Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true))
   {
     for(int i=0; i<n_bundles; i++)
     {
-      if(multi_marker_bundles[i]->getMarkerSize() == m_size)
-        multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
+      multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
     }
 
-    if(marker_detector.DetectAdditional(image, cam, false) > 0)
+    if(marker_detector->DetectAdditional(image, cam, false) > 0)
     {
       for(int i=0; i<n_bundles; i++)
       {
-        if(multi_marker_bundles[i]->getMarkerSize() == m_size)
-        {
-          if ((multi_marker_bundles[i]->SetTrackMarkers(marker_detector, cam, bundlePoses[i], image) > 0))
-        	  multi_marker_bundles[i]->Update(marker_detector.markers, cam, bundlePoses[i]);
-        }
+        if ((multi_marker_bundles[i]->SetTrackMarkers(*marker_detector, cam, bundlePoses[i], image) > 0))
+      	  multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
       }
     }
   }
@@ -234,9 +224,10 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
       // do this conversion here -jbinney
       IplImage ipl_image = cv_ptr_->image;
-      for(auto size : markers_size)
+      for(auto& marker_detector : marker_detectors)
       {
-        GetMultiMarkerPoses(&ipl_image, size);
+        double marker_size = marker_detector.getMarkerSize();
+        GetMultiMarkerPoses(&ipl_image, &marker_detector);
 
         //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
         for(int i=0; i<n_bundles; i++)
@@ -244,17 +235,17 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
         for (size_t i=0; i<marker_detector.markers->size(); i++)
       	{
-      	  int id = (*(marker_detector.markers))[i].GetId();
+
+      	  int id = marker_detector.markers->at(i).GetId();
 
       	  // Draw if id is valid
       	  if(id >= 0){
-
             bool valid_marker = false;
             for(int j=0; j<n_bundles; j++)
             {
               if(multi_marker_bundles[j]->IsValidMarker(id))
               {
-                if(multi_marker_bundles[j]->getMarkerSize() == size)
+                if(multi_marker_bundles[j]->getMarkerSize() == marker_size)
                 {
                   valid_marker = true;
                   break;
@@ -267,8 +258,8 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       	    //Mark the bundle that marker belongs to as "seen"
       	    for(int j=0; j<n_bundles; j++){
-      	      for(size_t k=0; k<bundle_indices[j].size(); k++){
-            		if(bundle_indices[j][k] == id){
+      	      for(auto& bundel_id : bundle_indices[j]){
+            		if(bundel_id == id){
             		  bundles_seen[j] = true;
             		  break;
             		}
@@ -277,12 +268,14 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       	    // Don't draw if it is a master tag...we do this later, a bit differently
       	    bool should_draw = true;
-      	    for(int i=0; i<n_bundles; i++){
-      	      if(id == master_id[i]) should_draw = false;
-      	    }
-      	    if(should_draw){
-      	      Pose p = (*(marker_detector.markers))[i].pose;
-      	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, size);
+      	    for(int i=0; i<n_bundles; i++)
+      	      if(id == master_id[i])
+                should_draw = false;
+
+      	    if(should_draw)
+            {
+      	      Pose p = marker_detector.markers->at(i).pose;
+      	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, marker_size);
       	      rvizMarkerPub_.publish (rvizMarker);
       	    }
       	  }
@@ -292,7 +285,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
         for(int i=0; i<n_bundles; i++)
       	{
       	  if(bundles_seen[i] == true){
-      	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, size);
+      	    makeMarkerMsgs(MAIN_MARKER, master_id[i], bundlePoses[i], image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, marker_size);
       	    rvizMarkerPub_.publish (rvizMarker);
       	    arPoseMarkers_.markers.push_back (ar_pose_marker);
       	  }
@@ -334,12 +327,13 @@ int main(int argc, char *argv[])
   int n_args_before_list = 7;
   n_bundles = argc - n_args_before_list;
 
-  marker_detector.SetMarkerSize(marker_size);
   multi_marker_bundles = new MultiMarkerBundle*[n_bundles];
   bundlePoses = new Pose[n_bundles];
   master_id = new int[n_bundles];
   bundle_indices = new std::vector<int>[n_bundles];
   bundles_seen = new bool[n_bundles];
+
+  std::set<double> markers_size;
 
   // Load the marker bundle XML files
   for(int i=0; i<n_bundles; i++){
@@ -351,12 +345,21 @@ int main(int argc, char *argv[])
       multi_marker_bundles[i]->Load(argv[i + n_args_before_list], FILE_FORMAT_XML);
       master_id[i] = multi_marker_bundles[i]->getMasterId();
       bundle_indices[i] = multi_marker_bundles[i]->getIndices();
-      markers_size.insert(multi_marker_bundles[i]->getMarkerSize());
+      double bundle_marker_size = multi_marker_bundles[i]->getMarkerSize();
+      if(bundle_marker_size == 0)
+        bundle_marker_size = marker_size;
+      markers_size.insert(bundle_marker_size);
     }
     else{
       cout<<"Cannot load file "<< argv[i + n_args_before_list] << endl;
       return 0;
     }
+  }
+
+  for(auto& marker_size : markers_size)
+  {
+    marker_detectors.emplace_back();
+    marker_detectors.back().SetMarkerSize(marker_size);
   }
 
   // Set up camera, listeners, and broadcasters
