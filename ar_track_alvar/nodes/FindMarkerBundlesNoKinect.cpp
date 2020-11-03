@@ -276,23 +276,27 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       	    }
 
       	    // Don't draw if it is a master tag...we do this later, a bit differently
-      	    bool should_draw = true;
-      	    for(int i=0; i<n_bundles; i++)
-      	      if(id == master_id[i])
-                should_draw = false;
+      	    //Now we want to draw it even if it is the master tag to know where it has been seen
+            // given that we can have a transform between the real position of the tag
+            // and the returned pose
 
-      	    if(should_draw)
-            {
+            //bool should_draw = true;
+      	    //for(int i=0; i<n_bundles; i++)
+      	    //  if(id == master_id[i])
+            //    should_draw = false;
+
+      	    //if(true)
+            //{
       	      Pose p = marker_detector->markers->at(i).pose;
       	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, marker_size);
       	      rvizMarkerPub_.publish (rvizMarker);
               ar_pose_visible_marker.header = ar_pose_marker.header;
-              ar_pose_visible_marker.id = ar_pose_marker.id;
+              ar_pose_visible_marker.id = id;
               ar_pose_visible_marker.main_id = main_id;
               ar_pose_visible_marker.confidence = ar_pose_marker.confidence;
               ar_pose_visible_marker.pose = ar_pose_marker.pose;
               arPoseVisibleMarkers_.markers.push_back (ar_pose_visible_marker);
-      	    }
+      	    //}
       	  }
       	}
 
