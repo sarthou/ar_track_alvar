@@ -43,6 +43,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <ar_track_alvar_msgs/AlvarMarker.h>
 #include <ar_track_alvar_msgs/AlvarMarkers.h>
+#include <ar_track_alvar_msgs/AlvarVisibleMarker.h>
+#include <ar_track_alvar_msgs/AlvarVisibleMarkers.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/image_encodings.h>
@@ -58,8 +60,10 @@ Camera *cam;
 cv_bridge::CvImagePtr cv_ptr_;
 image_transport::Subscriber cam_sub_;
 ros::Publisher arMarkerPub_;
+ros::Publisher arVisibleMarkerPub_;
 ros::Publisher rvizMarkerPub_;
 ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
+ar_track_alvar_msgs::AlvarVisibleMarkers arPoseVisibleMarkers_;
 tf::TransformListener *tf_listener;
 tf::TransformBroadcaster *tf_broadcaster;
 std::vector<MarkerDetector<MarkerData>> marker_detectors;
@@ -212,8 +216,9 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       visualization_msgs::Marker rvizMarker;
       ar_track_alvar_msgs::AlvarMarker ar_pose_marker;
-      arPoseMarkers_.markers.clear ();
-
+      ar_track_alvar_msgs::AlvarVisibleMarker ar_pose_visible_marker;
+      arPoseMarkers_.markers.clear();
+      arPoseVisibleMarkers_.markers.clear();
 
       //Convert the image
       cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
@@ -235,11 +240,12 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
         for (size_t i=0; i<marker_detector.markers->size(); i++)
       	{
-
       	  int id = marker_detector.markers->at(i).GetId();
+          int main_id = id;
 
       	  // Draw if id is valid
-      	  if(id >= 0){
+      	  if(id >= 0)
+          {
             bool valid_marker = false;
             for(int j=0; j<n_bundles; j++)
             {
@@ -248,6 +254,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
                 if(multi_marker_bundles[j]->getMarkerSize() == marker_size)
                 {
                   valid_marker = true;
+                  main_id = multi_marker_bundles[j]->getMasterId();
                   break;
                 }
               }
@@ -277,6 +284,12 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       	      Pose p = marker_detector.markers->at(i).pose;
       	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, marker_size);
       	      rvizMarkerPub_.publish (rvizMarker);
+              ar_pose_visible_marker.header = ar_pose_marker.header;
+              ar_pose_visible_marker.id = ar_pose_marker.id;
+              ar_pose_visible_marker.main_id = main_id;
+              ar_pose_visible_marker.confidence = ar_pose_marker.confidence;
+              ar_pose_visible_marker.pose = ar_pose_marker.pose;
+              arPoseVisibleMarkers_.markers.push_back (ar_pose_visible_marker);
       	    }
       	  }
       	}
@@ -294,7 +307,9 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       //Publish the marker messages
       arPoseMarkers_.header.stamp = image_msg->header.stamp;
+      arPoseVisibleMarkers_.header.stamp = image_msg->header.stamp;
       arMarkerPub_.publish (arPoseMarkers_);
+      arVisibleMarkerPub_.publish (arPoseVisibleMarkers_);
     }
     catch (cv_bridge::Exception& e){
       ROS_ERROR ("Could not convert from '%s' to 'rgb8'.", image_msg->encoding.c_str ());
@@ -367,6 +382,7 @@ int main(int argc, char *argv[])
   tf_listener = new tf::TransformListener(n);
   tf_broadcaster = new tf::TransformBroadcaster();
   arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
+  arVisibleMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarVisibleMarkers > ("ar_pose_visible_marker", 0);
   rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);
 
   //Give tf a chance to catch up before the camera callback starts asking for transforms
