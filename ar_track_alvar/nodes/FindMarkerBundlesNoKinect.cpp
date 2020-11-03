@@ -62,7 +62,7 @@ ros::Publisher rvizMarkerPub_;
 ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
 tf::TransformListener *tf_listener;
 tf::TransformBroadcaster *tf_broadcaster;
-std::vector<MarkerDetector<MarkerData>> marker_detectors;
+std::vector<MarkerDetector<MarkerData>*> marker_detectors;
 MultiMarkerBundle **multi_marker_bundles=NULL;
 Pose *bundlePoses;
 int *master_id;
@@ -85,20 +85,23 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
 void GetMultiMarkerPoses(IplImage *image, MarkerDetector<MarkerData>* marker_detector) {
+  double marker_size = marker_detector->getMarkerSize();
 
   if (marker_detector->Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true))
   {
     for(int i=0; i<n_bundles; i++)
     {
-      multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
+      if(multi_marker_bundles[i]->getMarkerSize() == marker_size)
+         multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
     }
 
     if(marker_detector->DetectAdditional(image, cam, false) > 0)
     {
       for(int i=0; i<n_bundles; i++)
       {
-        if ((multi_marker_bundles[i]->SetTrackMarkers(*marker_detector, cam, bundlePoses[i], image) > 0))
-      	  multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
+        if(multi_marker_bundles[i]->getMarkerSize() == marker_size)
+          if ((multi_marker_bundles[i]->SetTrackMarkers(*marker_detector, cam, bundlePoses[i], image) > 0))
+      	    multi_marker_bundles[i]->Update(marker_detector->markers, cam, bundlePoses[i]);
       }
     }
   }
@@ -226,17 +229,16 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       IplImage ipl_image = cv_ptr_->image;
       for(auto& marker_detector : marker_detectors)
       {
-        double marker_size = marker_detector.getMarkerSize();
-        GetMultiMarkerPoses(&ipl_image, &marker_detector);
-
+        double marker_size = marker_detector->getMarkerSize();
+        GetMultiMarkerPoses(&ipl_image, marker_detector);
         //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
         for(int i=0; i<n_bundles; i++)
   	       bundles_seen[i] = false;
 
-        for (size_t i=0; i<marker_detector.markers->size(); i++)
+        for (size_t i=0; i<marker_detector->markers->size(); i++)
       	{
 
-      	  int id = marker_detector.markers->at(i).GetId();
+      	  int id = marker_detector->markers->at(i).GetId();
 
       	  // Draw if id is valid
       	  if(id >= 0){
@@ -274,7 +276,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       	    if(should_draw)
             {
-      	      Pose p = marker_detector.markers->at(i).pose;
+      	      Pose p = marker_detector->markers->at(i).pose;
       	      makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput, &rvizMarker, &ar_pose_marker, marker_size);
       	      rvizMarkerPub_.publish (rvizMarker);
       	    }
@@ -358,8 +360,8 @@ int main(int argc, char *argv[])
 
   for(auto& marker_size : markers_size)
   {
-    marker_detectors.emplace_back();
-    marker_detectors.back().SetMarkerSize(marker_size);
+    marker_detectors.push_back(new MarkerDetector<MarkerData>());
+    marker_detectors.back()->SetMarkerSize(marker_size);
   }
 
   // Set up camera, listeners, and broadcasters
