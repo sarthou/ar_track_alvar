@@ -186,7 +186,8 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
   rvizMarker->lifetime = ros::Duration (1.0);
 
   // Only publish the pose of the master tag in each bundle, since that's all we really care about aside from visualization
-  if(type==MAIN_MARKER){
+  // We now need to publish all the markers
+  //if(type==MAIN_MARKER){
     //Take the pose of the tag in the camera frame and convert to the output frame (usually torso_lift_link for the PR2)
     tf::Transform tagPoseOutput = CamToOutput * markerPose;
 
@@ -195,9 +196,9 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
     ar_pose_marker->header.frame_id = output_frame;
     ar_pose_marker->header.stamp = image_msg->header.stamp;
     ar_pose_marker->id = id;
-  }
-  else
-    ar_pose_marker = NULL;
+  //}
+  //else
+  //  ar_pose_marker = NULL;
 }
 
 
