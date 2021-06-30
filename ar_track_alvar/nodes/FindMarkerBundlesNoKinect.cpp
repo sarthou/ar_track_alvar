@@ -294,7 +294,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
               ar_pose_visible_marker.header = ar_pose_marker.header;
               ar_pose_visible_marker.id = id;
               ar_pose_visible_marker.main_id = main_id;
-              ar_pose_visible_marker.confidence = ar_pose_marker.confidence;
+              ar_pose_visible_marker.confidence = marker_detector->markers->at(i).GetError(Marker::TRACK_ERROR);
               ar_pose_visible_marker.size = marker_size;
               ar_pose_visible_marker.pose = ar_pose_marker.pose;
               arPoseVisibleMarkers_.markers.push_back (ar_pose_visible_marker);
