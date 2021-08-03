@@ -196,6 +196,8 @@ void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_
     ar_pose_marker->header.frame_id = output_frame;
     ar_pose_marker->header.stamp = image_msg->header.stamp;
     ar_pose_marker->id = id;
+    ar_pose_marker->pose.header.frame_id = output_frame;
+    ar_pose_marker->pose.header.stamp = image_msg->header.stamp;
   //}
   //else
   //  ar_pose_marker = NULL;
@@ -297,6 +299,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
               ar_pose_visible_marker.confidence = marker_detector->markers->at(i).GetError(Marker::TRACK_ERROR);
               ar_pose_visible_marker.size = marker_size;
               ar_pose_visible_marker.pose = ar_pose_marker.pose;
+              ar_pose_visible_marker.pose.header = ar_pose_marker.header;
               arPoseVisibleMarkers_.markers.push_back (ar_pose_visible_marker);
       	    //}
       	  }
