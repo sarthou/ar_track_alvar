@@ -92,7 +92,7 @@ private:
 	Pose				  _pose;
 	IplImage			 *_grsc;
 	Camera				 *_camera;
-	CvMat				 *_object_model;
+	cv::Mat				 *_object_model;
 
 public:
 	void SetCamera(Camera *camera) {
@@ -106,7 +106,7 @@ public:
 	double Track(IplImage *image);
 
 private:
-	static void Project(CvMat* state, CvMat* projection, void *param);
+	static void Project(cv::Mat* state, cv::Mat* projection, void *param);
 	bool UpdatePose(IplImage* image=0);
 	bool UpdateRotationOnly(IplImage *gray, IplImage *image=0);
 

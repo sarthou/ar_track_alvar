@@ -371,7 +371,7 @@ int PlaneFitPoseImprovement(int id, const ARCloud &corners_3D, ARCloud::Ptr sele
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and
 // using all markers in a bundle to infer the master tag's position
-void GetMultiMarkerPoses(IplImage *image, ARCloud &cloud) {
+void GetMultiMarkerPoses(cv::Mat& image, ARCloud &cloud) {
 
   for(int i=0; i<n_bundles; i++){
     master_visible[i] = false;
@@ -628,8 +628,8 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
       // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
       // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
       // do this conversion here -jbinney
-      IplImage ipl_image = cv_ptr_->image;
-      GetMultiMarkerPoses(&ipl_image, cloud);
+      cv::Mat ipl_image = cv_ptr_->image;
+      GetMultiMarkerPoses(ipl_image, cloud);
 
       for (size_t i=0; i<marker_detector.markers->size(); i++)
 	{
@@ -675,8 +675,8 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
 //Create a ROS frame out of the known corners of a tag in the weird marker coord frame used by Alvar markers (x right y forward z up)
 //p0-->p1 should point in Alvar's pos X direction
 //p1-->p2 should point in Alvar's pos Y direction
-int makeMasterTransform (const CvPoint3D64f& p0, const CvPoint3D64f& p1,
-                         const CvPoint3D64f& p2, const CvPoint3D64f& p3,
+int makeMasterTransform (const cv::Point3d& p0, const cv::Point3d& p1,
+                         const cv::Point3d& p2, const cv::Point3d& p3,
                          tf::Transform &retT)
   {
     const tf::Vector3 q0(p0.x, p0.y, p0.z);
@@ -737,10 +737,9 @@ int calcAndSaveMasterCoords(MultiMarkerBundle &master)
         rel_corner_coords.clear();
 
         //Get the coords of the corners of the child marker in the master frame
-        CvPoint3D64f mark_corners[4];
-        for(size_t j=0; j<4; j++){
+        cv::Point3d mark_corners[4];
+        for(size_t j=0; j<4; j++)
             mark_corners[j] = master.pointcloud[master.pointcloud_index(mark_id, j)];
-        }
 
         //Use them to find a transform from the master frame to the child frame
         tf::Transform tform;
@@ -749,7 +748,7 @@ int calcAndSaveMasterCoords(MultiMarkerBundle &master)
         //Finally, find the coords of the corners of the master in the child frame
         for(size_t j=0; j<4; j++){
 
-            CvPoint3D64f corner_coord = master.pointcloud[master.pointcloud_index(mast_id, j)];
+            cv::Point3d corner_coord = master.pointcloud[master.pointcloud_index(mast_id, j)];
             double px = corner_coord.x;
             double py = corner_coord.y;
             double pz = corner_coord.z;

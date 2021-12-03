@@ -82,13 +82,13 @@ std::string cam_info_topic;
 std::string output_frame;
 int n_bundles = 0;
 
-void GetMultiMarkerPoses(IplImage *image, double m_size);
+void GetMultiMarkerPoses(cv::Mat& image, double m_size);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size);
 
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
-void GetMultiMarkerPoses(IplImage *image, MarkerDetector<MarkerData>* marker_detector) {
+void GetMultiMarkerPoses(cv::Mat& image, MarkerDetector<MarkerData>* marker_detector) {
   double marker_size = marker_detector->getMarkerSize();
 
   if (marker_detector->Detect(image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true))
@@ -234,11 +234,11 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
       // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
       // do this conversion here -jbinney
-      IplImage ipl_image = cv_ptr_->image;
+      cv::Mat ipl_image = cv_ptr_->image;
       for(auto& marker_detector : marker_detectors)
       {
         double marker_size = marker_detector->getMarkerSize();
-        GetMultiMarkerPoses(&ipl_image, marker_detector);
+        GetMultiMarkerPoses(ipl_image, marker_detector);
         //Draw the observed markers that are visible and note which bundles have at least 1 marker seen
         for(int i=0; i<n_bundles; i++)
   	       bundles_seen[i] = false;

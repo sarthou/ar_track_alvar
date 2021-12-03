@@ -40,7 +40,7 @@ public:
 
 	bool UpdateDistance(Pose* pose, double limit=10)
 	{
-		double trad[3]; CvMat tra = cvMat(3, 1, CV_64F, trad);
+		double trad[3]; cv::Mat tra = cv::Mat(3, 1, CV_64F, trad);
 		Pose p = *pose;
 		p.Invert();
 		p.GetTranslation(&tra);
@@ -101,13 +101,13 @@ void SimpleSfM::AddMarker(int marker_id, double edge_length, Pose &pose) {
 
 float PointVectorFromCamera(CvPoint3D32f p3d, CvPoint3D32f &p3d_vec, Pose *camera_pose) {
 	double pd[16], v[4] = {0,0,0,1};
-	CvMat Pi = cvMat(4, 4, CV_64F, pd);
-	CvMat V = cvMat(4, 1, CV_64F, v);
+	cv::Mat Pi = cv::Mat(4, 4, CV_64F, pd);
+	cv::Mat V = cv::Mat(4, 1, CV_64F, v);
 
 	// Camera location in marker coordinates
 	camera_pose->GetMatrix(&Pi);
 	cvInv(&Pi, &Pi);
-	cvMatMul(&Pi, &V, &V);
+	V = Pi * V;
 	v[0] /= v[3];
 	v[1] /= v[3];
 	v[2] /= v[3];
@@ -424,9 +424,9 @@ bool SimpleSfM::UpdateRotationsOnly(IplImage *image) {
 			double gl_mat[16];
 			pose_difference.GetMatrixGL(rot_mat);
 			pose_original.GetMatrixGL(gl_mat);
-			CvMat rot = cvMat(4, 4, CV_64F, rot_mat);// Rotation matrix (difference) from the tracker
-			CvMat mod = cvMat(4, 4, CV_64F, gl_mat); // Original modelview matrix (camera location)
-			cvMatMul(&mod, &rot, &rot);
+			cv::Mat rot = cv::Mat(4, 4, CV_64F, rot_mat);// Rotation matrix (difference) from the tracker
+			cv::Mat mod = cv::Mat(4, 4, CV_64F, gl_mat); // Original modelview matrix (camera location)
+			rot = mod * rot;
 			/*if(pose_ok)*/ pose.SetMatrixGL(rot_mat);
 		}
 		//pose_ok = true;

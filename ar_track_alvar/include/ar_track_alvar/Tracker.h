@@ -30,7 +30,7 @@
  * \brief This file implements a tracking interface.
  */
 
-#include <cxcore.h>
+#include <opencv2/core/core_c.h>
 #include "Alvar.h"
 
 namespace alvar {

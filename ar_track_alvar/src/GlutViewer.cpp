@@ -79,7 +79,7 @@ void Drawable::SetGLMatTraQuat(double *tra, double *quat, bool flip)
 	Rotation r;
 	if (quat != 0)
 	{
-		CvMat cv_mat;
+		cv::Mat cv_mat;
 		cvInitMatHeader(&cv_mat, 4, 1, CV_64F, quat);
 		r.SetQuaternion(&cv_mat);
 	}
@@ -91,7 +91,7 @@ void Drawable::SetGLMatTraQuat(double *tra, double *quat, bool flip)
 		//flp=-1;
 	}
 
-	CvMat cv_gl_mat;
+	cv::Mat cv_gl_mat;
 	cvInitMatHeader(&cv_gl_mat, 4, 4, CV_64F, gl_mat); cvZero(&cv_gl_mat);
 	r.GetMatrix(&cv_gl_mat);
 	cvSet2D(&cv_gl_mat, 0, 3, cvScalar(flp*tra[0]));
@@ -105,30 +105,30 @@ void Drawable::SetGLMatTraQuat(double *tra, double *quat, bool flip)
 void Drawable::SetGLMatTraRod(double *tra, double *rod)
 {
 	// This is the OpenGL augmentation matrix
-	CvMat cv_gl_mat;
+	cv::Mat cv_gl_mat;
 	cvInitMatHeader(&cv_gl_mat, 4, 4, CV_64F, gl_mat); cvSetIdentity(&cv_gl_mat);
 
 	// Figure out the rotation part 
 	double rot_mat_data[3][3];
-	CvMat rot_mat = cvMat(3, 3, CV_64F, rot_mat_data);
+	cv::Mat rot_mat = cv::Mat(3, 3, CV_64F, rot_mat_data);
 	cvSetIdentity(&rot_mat);
 	if (rod != 0)
 	{
-		CvMat rod_mat;
+		cv::Mat rod_mat;
 		cvInitMatHeader(&rod_mat, 3, 1, CV_64F, rod);
 		cvRodrigues2(&rod_mat, &rot_mat, 0);
 	}
 
 	// Fill in the rotation part
-	cvmSet(&cv_gl_mat, 0, 0, cvmGet(&rot_mat, 0, 0));
-	cvmSet(&cv_gl_mat, 0, 1, cvmGet(&rot_mat, 0, 1));
-	cvmSet(&cv_gl_mat, 0, 2, cvmGet(&rot_mat, 0, 2));
-	cvmSet(&cv_gl_mat, 1, 0, cvmGet(&rot_mat, 1, 0));
-	cvmSet(&cv_gl_mat, 1, 1, cvmGet(&rot_mat, 1, 1));
-	cvmSet(&cv_gl_mat, 1, 2, cvmGet(&rot_mat, 1, 2));
-	cvmSet(&cv_gl_mat, 2, 0, cvmGet(&rot_mat, 2, 0));
-	cvmSet(&cv_gl_mat, 2, 1, cvmGet(&rot_mat, 2, 1));
-	cvmSet(&cv_gl_mat, 2, 2, cvmGet(&rot_mat, 2, 2));
+	cv_gl_mat.add(0, 0) = rot_mat.at(0, 0);
+	cv_gl_mat.add(0, 1) = rot_mat.at(0, 1);
+	cv_gl_mat.add(0, 2) = rot_mat.at(0, 2);
+	cv_gl_mat.add(1, 0) = rot_mat.at(1, 0);
+	cv_gl_mat.add(1, 1) = rot_mat.at(1, 1);
+	cv_gl_mat.add(1, 2) = rot_mat.at(1, 2);
+	cv_gl_mat.add(2, 0) = rot_mat.at(2, 0);
+	cv_gl_mat.add(2, 1) = rot_mat.at(2, 1);
+	cv_gl_mat.add(2, 2) = rot_mat.at(2, 2);
 
 	// Fill in the translation part
 	cvSet2D(&cv_gl_mat, 0, 3, cvScalar(tra[0]));

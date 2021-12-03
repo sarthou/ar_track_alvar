@@ -1,5 +1,5 @@
-#include "cv.h"
-#include "highgui.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui_c.h>
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -52,24 +52,24 @@ void filter_kalman(double x, double y, double *fx, double *fy) {
         init = false;
         // H
         cvZero(sensor.H);
-        cvmSet(sensor.H, 0, 0, 1);
-        cvmSet(sensor.H, 1, 1, 1);
+        sensor.H->at(0, 0) = 1;
+        sensor.H->at(1, 1) = 1;
         // R
         cvSetIdentity(sensor.R, cvScalar(10));
         // F
         cvSetIdentity(kalman.F);
-        cvmSet(kalman.F, 0, 2, 1);
-        cvmSet(kalman.F, 1, 3, 1);
+        kalman.F->at(0, 2) = 1;
+        kalman.F->at(1, 3) = 1;
         // Q
-        cvmSet(kalman.Q, 0, 0, 0.0001);
-        cvmSet(kalman.Q, 1, 1, 0.0001);
-        cvmSet(kalman.Q, 2, 2, 0.000001);
-        cvmSet(kalman.Q, 3, 3, 0.000001);
+        kalman.Q->at(0, 0) = 0.0001;
+        kalman.Q->at(1, 1) = 0.0001;
+        kalman.Q->at(2, 2) = 0.000001;
+        kalman.Q->at(3, 3) = 0.000001;
         // P
         cvSetIdentity(kalman.P, cvScalar(100));
     }
-    cvmSet(sensor.z, 0, 0, x);
-    cvmSet(sensor.z, 1, 0, y);
+    sensor.z->at(0, 0) = x;
+    sensor.z->at(1, 0) = y;
     kalman.predict_update(&sensor, (unsigned long)(cv::getTickCount() / cv::getTickFrequency() * 1000));
     *fx = cvmGet(kalman.x, 0, 0);
     *fy = cvmGet(kalman.x, 1, 0);
@@ -89,28 +89,28 @@ void filter_array_average(double x, double y, double *fx, double *fy) {
 }
 
 class KalmanSensorOwn : public KalmanSensorEkf {
-    virtual void h(CvMat *x_pred, CvMat *_z_pred) {
+    virtual void h(cv::Mat *x_pred, cv::Mat *_z_pred) {
         double x = cvmGet(x_pred, 0, 0);
         double y = cvmGet(x_pred, 1, 0);
         double dx = cvmGet(x_pred, 2, 0);
         double dy = cvmGet(x_pred, 3, 0);
-        cvmSet(_z_pred, 0, 0, x);
-        cvmSet(_z_pred, 1, 0, y);
+        _z_pred->at(0, 0) = x;
+        _z_pred->at(1, 0) = y;
     }
 public:
     KalmanSensorOwn(int _n, int _m) : KalmanSensorEkf(_n, _m) {}
 };
 
 class KalmanOwn : public KalmanEkf {
-    virtual void f(CvMat *_x, CvMat *_x_pred, double dt) {
+    virtual void f(cv::Mat *_x, cv::Mat *_x_pred, double dt) {
         double x = cvmGet(_x, 0, 0);
         double y = cvmGet(_x, 1, 0);
         double dx = cvmGet(_x, 2, 0);
         double dy = cvmGet(_x, 3, 0);
-        cvmSet(_x_pred, 0, 0, x + dt*dx);
-        cvmSet(_x_pred, 1, 0, y + dt*dy);
-        cvmSet(_x_pred, 2, 0, dx);
-        cvmSet(_x_pred, 3, 0, dy);
+        _x_pred->at(0, 0) = x + dt*dx;
+        _x_pred->at(0, 0) = y + dt*dy;
+        _x_pred->at(0, 0) = dx;
+        _x_pred->at(0, 0) = dy;
     }
 public:
     KalmanOwn(int _n) : KalmanEkf(_n) {}
@@ -125,15 +125,15 @@ void filter_ekf(double x, double y, double *fx, double *fy) {
         // R
         cvSetIdentity(sensor.R, cvScalar(100));
         // Q
-        cvmSet(kalman.Q, 0, 0, 0.001);
-        cvmSet(kalman.Q, 1, 1, 0.001);
-        cvmSet(kalman.Q, 2, 2, 0.01);
-        cvmSet(kalman.Q, 3, 3, 0.01);
+        kalman.Q->at(0, 0) = 0.001;
+        kalman.Q->at(1, 1) = 0.001;
+        kalman.Q->at(2, 2) = 0.01;
+        kalman.Q->at(3, 3) = 0.01;
         // P
         cvSetIdentity(kalman.P, cvScalar(100));
     }
-    cvmSet(sensor.z, 0, 0, x);
-    cvmSet(sensor.z, 1, 0, y);
+    sensor.z->at(0, 0) = x;
+    sensor.z->at(1, 0) = y;
     kalman.predict_update(&sensor, (unsigned long)(cv::getTickCount() / cv::getTickFrequency() * 1000));
     *fx = cvmGet(kalman.x, 0, 0);
     *fy = cvmGet(kalman.x, 1, 0);

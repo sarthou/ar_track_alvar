@@ -67,7 +67,7 @@ void MultiMarkerInitializer::MeasurementsAdd(MarkerIterator &begin, MarkerIterat
 		if (index == 0 && marker_status[index] == 0)
 		{
 			Pose pose;
-			CvPoint3D64f corners[4];
+			cv::Point3d corners[4];
 			PointCloudCorners3d(marker->GetMarkerEdgeLength(), pose, corners);
 			for(size_t j = 0; j < 4; ++j) {
 				int p_index = pointcloud_index(id, j);
@@ -100,7 +100,8 @@ int MultiMarkerInitializer::Initialize(Camera* cam) {
 			Pose pose;
 			MarkerIteratorImpl<MarkerMeasurement> m_begin(markers.begin());
 			MarkerIteratorImpl<MarkerMeasurement> m_end(markers.end());
-			double err = _GetPose(m_begin, m_end, cam, pose, NULL);
+			cv::Mat empty_img;
+			double err = _GetPose(m_begin, m_end, cam, pose, empty_img);
 			if (err >= 0) {
 				// If pose is found, estimate marker poses for those that are still unkown.
 				found_new = updateMarkerPoses(markers, pose);
@@ -127,18 +128,18 @@ bool MultiMarkerInitializer::updateMarkerPoses(vector<MarkerMeasurement, Eigen::
 			// Compute absolute marker pose.
 			double cam_posed[16];
 			double mar_posed[16];
-			CvMat cam_mat = cvMat(4, 4, CV_64F, cam_posed);
-			CvMat mar_mat = cvMat(4, 4, CV_64F, mar_posed);
-			pose.GetMatrix(&cam_mat);
-			marker.pose.GetMatrix(&mar_mat);
-			cvInvert(&cam_mat, &cam_mat);
-			cvMatMul(&cam_mat, &mar_mat, &mar_mat);
-			marker.pose.SetMatrix(&mar_mat);
+			cv::Mat cam_mat = cv::Mat(4, 4, CV_64F, cam_posed);
+			cv::Mat mar_mat = cv::Mat(4, 4, CV_64F, mar_posed);
+			pose.GetMatrix(cam_mat);
+			marker.pose.GetMatrix(mar_mat);
+			cam_mat = cam_mat.inv();
+      		mar_mat = cam_mat * mar_mat;
+			marker.pose.SetMatrix(mar_mat);
 			// Put marker into point cloud
-			CvPoint3D64f corners[4];
+			cv::Point3d corners[4];
 			PointCloudCorners3d(marker.GetMarkerEdgeLength(), marker.pose, corners);
 			for(size_t j = 0; j < 4; ++j) {
-				CvPoint3D64f p;
+				cv::Point3d p;
 				int p_index = pointcloud_index(id, j);
 				p.x = pointcloud_filtered[3*p_index+0].next(corners[j].x);
 				p.y = pointcloud_filtered[3*p_index+1].next(corners[j].y);

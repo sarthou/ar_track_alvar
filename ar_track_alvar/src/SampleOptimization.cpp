@@ -1,6 +1,6 @@
 #include "Optimization.h"
-#include "cv.h"
-#include "highgui.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui_c.h>
 #include <time.h>
 #include <vector>
 #include <iostream>
@@ -15,7 +15,7 @@ double random(int dist_type, double param1, double param2) {
     static CvRNG rng=0;
     if (rng == 0) rng = cvRNG(time(0));
     double m_data;
-    CvMat m = cvMat(1, 1, CV_64F, &m_data);
+    cv::Mat m = cv::Mat(1, 1, CV_64F, &m_data);
     cvRandArr(&rng, &m, dist_type, cvScalar(param1), cvScalar(param2));
     return m_data;
 }
@@ -37,7 +37,7 @@ bool get_measurement(double *x, double *y, double a, double b, double c, double 
     return true;
 }
 
-void Estimate(CvMat* state, CvMat *projection, void *param) {
+void Estimate(cv::Mat* state, cv::Mat *projection, void *param) {
     double *measx=(double *)param;
     int data_degree = state->rows-1;
     double a = (data_degree >= 4? cvmGet(state, 4, 0) : 0);
@@ -45,9 +45,8 @@ void Estimate(CvMat* state, CvMat *projection, void *param) {
     double c = (data_degree >= 2? cvmGet(state, 2, 0) : 0);
     double d = (data_degree >= 1? cvmGet(state, 1, 0) : 0);
     double e = (data_degree >= 0? cvmGet(state, 0, 0) : 0);
-    for (int i=0; i<projection->rows; i++) {
-        cvmSet(projection, i, 0, get_y(measx[i], a, b, c, d, e));
-    }
+    for (int i=0; i<projection->rows; i++)
+        projection->at(i, 0) = get_y(measx[i], a, b, c, d, e);
 }
 
 int main(int argc, char *argv[])
@@ -94,17 +93,17 @@ int main(int argc, char *argv[])
             cvShowImage("SampleOptimization", img);
             cvWaitKey(10);
             double measx[1000];
-            CvMat *meas = cvCreateMat(measvec.size(), 1, CV_64F);
+            cv::Mat meas(measvec.size(), 1, CV_64F);
             for (size_t i=0; i<measvec.size(); i++) {
                 measx[i] = measvec[i].x;
-                cvmSet(meas, i, 0, measvec[i].y);
+                meas.at(i, 0) = measvec[i].y;
             }
             for (int degree=0; degree<5; degree++) 
             {
                 double param_data[5]={0};
-                CvMat param = cvMat(degree+1, 1, CV_64F, param_data);
-                Optimization opt(param.rows, meas->rows);
-                opt.Optimize(&param, meas, 0.1, 100, Estimate, measx);
+                cv::Mat param = cv::Mat(degree+1, 1, CV_64F, param_data);
+                Optimization opt(param.rows, meas.rows);
+                opt.Optimize(&param, &meas, 0.1, 100, Estimate, measx);
                 double a = (degree >= 4? cvmGet(&param, 4, 0) : 0);
                 double b = (degree >= 3? cvmGet(&param, 3, 0) : 0);
                 double c = (degree >= 2? cvmGet(&param, 2, 0) : 0);
@@ -124,7 +123,6 @@ int main(int argc, char *argv[])
                 cvShowImage("SampleOptimization", img);
                 cvWaitKey(10);
             }
-            cvReleaseMat(&meas);
             cvShowImage("SampleOptimization", img);
             int key = cvWaitKey(0);
             if (key == 'q') {

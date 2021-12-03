@@ -1,11 +1,12 @@
 #include "ar_track_alvar/MultiMarker.h"
 #include "ar_track_alvar/Color.h"
-#include "highgui.h"
+#include <opencv2/highgui.hpp>
+
 using namespace std;
 using namespace alvar;
 
 struct State {
-    IplImage *img;
+    cv::Mat img;
     stringstream filename;
     double minx, miny, maxx, maxy; // top-left and bottom-right in pixel units
     MultiMarker multi_marker;
@@ -29,8 +30,7 @@ struct State {
     MarkerData::MarkerContentType marker_data_content_type;
 
     State()
-        : img(0),
-          prompt(false),
+        : prompt(false),
           units(96.0/2.54),      // cm assuming 96 dpi
           marker_side_len(9.0),  // 9 cm
           cube_side_len(9.0),   //9cm
@@ -45,38 +45,14 @@ struct State {
           marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER)
     {}
     ~State() {
-        if (img) cvReleaseImage(&img);
+        img.release();
     }
 
-    IplImage *rotateImage2(const IplImage *src, float angleDegrees)
+    cv::Mat rotateImage90(cv::Mat src)
     {
-        // Create a map_matrix, where the left 2x2 matrix
-        // is the transform and the right 2x1 is the dimensions.
-        float m[6];
-        CvMat M = cvMat(2, 3, CV_32F, m);
-        int w = src->width;
-        int h = src->height;
-        float angleRadians = angleDegrees * ((float)CV_PI / 180.0f);
-        m[0] = (float)(cos(angleRadians));
-        m[1] = (float)(sin(angleRadians));
-        m[3] = -m[1];
-        m[4] = m[0];
-        m[2] = w*0.5f;
-        m[5] = h*0.5f;
-
-        // Make a spare image for the result
-        CvSize sizeRotated;
-        sizeRotated.width = cvRound(h);
-        sizeRotated.height = cvRound(w);
-
-        // Rotate
-        IplImage *imageRotated = cvCreateImage(sizeRotated,
-            src->depth, src->nChannels);
-
-        // Transform the image
-        cvGetQuadrangleSubPix(src, imageRotated, &M);
-
-        return imageRotated;
+        transpose(src, src);  
+        flip(src, src,1);
+        return src;
     }
 
     void AddMarker(const char *id) {
@@ -85,16 +61,15 @@ struct State {
         MarkerData md(marker_side_len, content_res, margin_res);
         int side_len = int(marker_side_len*units);
         int cube_len = int(cube_side_len*units);
-        if (img == 0)
+        if (img.empty())
         {
-            img = cvCreateImage(cvSize(cube_len*4+1, cube_len*3+1), IPL_DEPTH_8U, 1);
-            cvSet(img, cvScalar(255));
-            std::cout << "img size = " << img->width << " " << img->height << std::endl;
+            img = cv::Mat(cv::Size(cube_len*4+1, cube_len*3+1), CV_8UC1, cv::Scalar(255));
+            std::cout << "img size = " << img.cols << " " << img.rows << std::endl;
             filename.str("");
             filename<<"MarkerData";
         }
 
-        CvRect roi;
+        cv::Rect roi;
         roi.x = int((posx*units) + (((cube_side_len - marker_side_len) * units) / 2.0));
         roi.y = int((posy*units) + (((cube_side_len - marker_side_len) * units) / 2.0));
         roi.width = int(marker_side_len*units);
@@ -102,11 +77,18 @@ struct State {
         std::cout << "pose = " << posx << " " << posy << std::endl;
         std::cout << "roi pose = " << roi.x << " " << roi.y << std::endl;
         std::cout << "roi size = " << roi.width << " " << roi.height << std::endl;
-        cvSetImageROI(img, roi);
+
+        int roi_t = -roi.y;
+        int roi_b = -img.rows + roi.width + roi.y;
+        int roi_l = -roi.x;
+        int roi_r = -img.cols + roi.height + roi.x;
+        std::cout << roi_t << " : " << roi_b << " : " << roi_l << " : " << roi_r << std::endl;
+        img.adjustROI(roi_t, roi_b, roi_l, roi_r);
 
         int idi = atoi(id);
         md.SetContent(marker_data_content_type, idi, 0);
-        if (filename.str().length()<64) filename<<"_"<<idi;
+        if (filename.str().length()<64)
+            filename<<"_"<<idi;
 
         Pose pose;
         pose.Reset();
@@ -116,20 +98,22 @@ struct State {
         multi_marker.PointCloudTranslate(idi, transx, transy, transz);
 
         md.ScaleMarkerToImage(img);
-        cvResetImageROI(img);
+        // reset ROI
+        cv::Size roi_size;
+        cv::Point roi_offset;
+        img.locateROI(roi_size, roi_offset);
+        img.adjustROI(roi_offset.y, roi_size.height - img.rows, roi_offset.x,
+                      roi_size.width - img.cols);
     }
 
     void AddCube()
     {
-        if (img)
-        {
-            cvReleaseImage(&img);
-            img = 0;
-        }
+        if (!img.empty())
+            img.release();
 
         for(unsigned int face = 0; face < 6; face++)
         {
-          std::cout<<"  marker id ["<< marker_id <<"]: "; std::flush(std::cout);
+          std::cout << "  marker id [" << marker_id << "]: "; std::flush(std::cout);
 
           if(face == 0)
           {
@@ -182,23 +166,24 @@ struct State {
 
     void Save()
     {
-        if (img)
+        if (!img.empty())
         {
-          IplImage* color_img = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,3);
-          cvCvtColor(img, color_img, CV_GRAY2RGB);
-          col::change_color(color_img, color);
-          img = color_img;
-          img = rotateImage2(img, 90);
+            cv::Mat color_img;
+            cv::cvtColor(img, color_img, cv::COLOR_GRAY2RGB);
+            col::change_color(color_img, color);
+            img = rotateImage90(color_img);
 
-          std::stringstream filenamexml;
-          filenamexml<<filename.str()<<".xml";
-          filename<<".png";
-          std::cout<<"Saving: "<<filename.str()<<std::endl;
-          cvSaveImage(filename.str().c_str(), img);
+            std::stringstream filenamexml;
+            filenamexml<<filename.str()<<".xml";
+            filename<<".png";
+            std::cout<<"Saving: "<<filename.str()<<std::endl;
+            cv::imwrite(filename.str(), img);
 
-          std::cout<<"Saving: "<<filenamexml.str()<<std::endl;
-          multi_marker.Save(filenamexml.str().c_str(), alvar::FILE_FORMAT_XML);
+            std::cout<<"Saving: "<<filenamexml.str()<<std::endl;
+            multi_marker.Save(filenamexml.str().c_str(), alvar::FILE_FORMAT_XML);
         }
+        else
+            std::cout << "The image is empty" << std::endl;
     }
 
     void assign_rot(int xx, int xy, int xz, int yx, int yy, int yz, int zx, int zy, int zz)

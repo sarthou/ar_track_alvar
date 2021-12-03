@@ -1,6 +1,7 @@
 #include "ar_track_alvar/MultiMarker.h"
 #include "ar_track_alvar/Color.h"
-#include "highgui.h"
+#include <opencv2/highgui.hpp>
+
 using namespace std;
 using namespace alvar;
 
@@ -12,7 +13,7 @@ using namespace alvar;
 #endif
 
 struct State {
-    std::vector<IplImage*> imgs;
+    std::vector<cv::Mat> imgs;
     std::vector<std::string> filenames;
     double minx, miny, maxx, maxy; // top-left and bottom-right in pixel units
     MultiMarker multi_marker;
@@ -45,8 +46,8 @@ struct State {
           marker_data_content_type(MarkerData::MARKER_CONTENT_TYPE_NUMBER)
     {}
     ~State() {
-        for(auto img : imgs)
-          cvReleaseImage(&img);
+        for(auto& img : imgs)
+          img.release();
     }
 
     bool markerExist() { return imgs.size(); }
@@ -54,8 +55,8 @@ struct State {
     void resetMarker()
     {
       multi_marker = MultiMarker();
-      for(auto img : imgs)
-        cvReleaseImage(&img);
+      for(auto& img : imgs)
+        img.release();
       imgs.clear();
       filenames.clear();
     }
@@ -65,14 +66,15 @@ struct State {
         int side_len = int(marker_side_len*units+0.5);
         multi_marker.setMarkerSize(marker_side_len);
 
-        imgs.push_back(cvCreateImage(cvSize(side_len, side_len), IPL_DEPTH_8U, 1));
+        imgs.push_back(cv::Mat(cv::Size(side_len, side_len), CV_8UC1, 1));
         filenames.push_back("MarkerData");
 
         if (marker_data_content_type == MarkerData::MARKER_CONTENT_TYPE_NUMBER)
         {
           int idi = atoi(id);
           md.SetContent(marker_data_content_type, idi, 0);
-          if (filenames.back().length()<64) filenames.back() += "_" + std::to_string(idi);
+          if (filenames.back().length()<64)
+            filenames.back() += "_" + std::to_string(idi);
 
           Pose pose;
           pose.Reset();
@@ -95,10 +97,17 @@ struct State {
         }
 
         md.ScaleMarkerToImage(imgs.back());
-        cvResetImageROI(imgs.back());
-        IplImage* color_img = cvCreateImage(cvGetSize(imgs.back()),IPL_DEPTH_8U,3);
-        cvCvtColor(imgs.back(), color_img, CV_GRAY2RGB);
+        // reset ROI
+        cv::Size roi_size;
+        cv::Point roi_offset;
+        imgs.back().locateROI(roi_size, roi_offset);
+        imgs.back().adjustROI(roi_offset.y, roi_size.height - imgs.back().rows, roi_offset.x,
+                              roi_size.width - imgs.back().cols);
+
+        cv::Mat color_img;
+        cv::cvtColor(imgs.back(), color_img, cv::COLOR_GRAY2RGB);
         col::change_color(color_img, color);
+
         imgs.back() = color_img;
     }
 
@@ -111,7 +120,7 @@ struct State {
             {
               std::string tmp_name = filenames[i] + ".png";
               std::cout << COLOR_GREEN << "Saving: " << tmp_name << COLOR_OFF<< std::endl;
-              cvSaveImage(tmp_name.c_str(), imgs[i]);
+              cv::imwrite(tmp_name, imgs[i]);
             }
 
             std::cout << COLOR_GREEN << "Saving: " << filenamexml.str() << COLOR_OFF << std::endl;

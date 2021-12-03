@@ -272,7 +272,7 @@ int PlaneFitPoseImprovement(int id, const ARCloud &corners_3D, ARCloud::Ptr sele
 }
 
 
-void GetMarkerPoses(IplImage *image, ARCloud &cloud) {
+void GetMarkerPoses(cv::Mat& image, ARCloud &cloud) {
 
   //Detect and track the markers
   if (marker_detector.Detect(image, cam, true, false, max_new_marker_error,
@@ -355,11 +355,11 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
     // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
     // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
     // do this conversion here -jbinney
-    IplImage ipl_image = cv_ptr_->image;
+    cv::Mat ipl_image = cv_ptr_->image;
 
     //Use the kinect to improve the pose
     Pose ret_pose;
-    GetMarkerPoses(&ipl_image, cloud);
+    GetMarkerPoses(ipl_image, cloud);
 
     tf::StampedTransform CamToOutput;
     if (image_msg->header.frame_id == output_frame)

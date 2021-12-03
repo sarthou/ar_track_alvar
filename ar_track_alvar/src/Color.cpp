@@ -30,20 +30,10 @@ namespace col
     return result;
   }
 
-  void change_color(IplImage *p_img, unsigned char p_color)
+  void change_color(cv::Mat& color_img, unsigned char p_color)
   {
-    for( int y=0; y<p_img->height; y++ )
-    {
-      uchar* ptr = (uchar*) ( p_img->imageData + y * p_img->widthStep );
-      for( int x=0; x<p_img->width; x++ )
-      {
-        if(ptr[3*x+2] == 0)
-        {
-          ptr[3*x+2] = ((p_color >> 2)&0x01)*150; //r
-          ptr[3*x+1] = ((p_color >> 1)&0x01)*150; //g
-          ptr[3*x+0] = ((p_color >> 0)&0x01)*200; //b
-        }
-      }
-    }
+    cv::Mat mask;
+    cv::inRange(color_img, cv::Scalar(0, 0, 0), cv::Scalar(0, 0, 0), mask);
+    color_img.setTo(cv::Scalar(((p_color >> 0)&0x01)*200, ((p_color >> 1)&0x01)*150, ((p_color >> 2)&0x01)*150), mask);
   }
 }

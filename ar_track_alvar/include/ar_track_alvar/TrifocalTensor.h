@@ -25,7 +25,7 @@
 #define __TRIFOCAL_TENSOR__
 
 #include "Alvar.h"
-#include <cxcore.h>
+#include <opencv2/core/core_c.h>
 #include "Pose.h"
 
 /**

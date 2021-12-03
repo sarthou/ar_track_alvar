@@ -23,7 +23,7 @@
 
 #include "ar_track_alvar/Alvar.h"
 #include "ar_track_alvar/Marker.h"
-#include "highgui.h"
+#include <opencv2/highgui.hpp>
 
 template class ALVAR_EXPORT alvar::MarkerIteratorImpl<alvar::Marker>;
 template class ALVAR_EXPORT alvar::MarkerIteratorImpl<alvar::MarkerData>;
@@ -36,37 +36,56 @@ using namespace std;
 
 #define HEADER_SIZE 8
 
-void Marker::VisualizeMarkerPose(IplImage *image, Camera *cam, double visualize2d_points[12][2], CvScalar color) const {
+void Marker::VisualizeMarkerPose(cv::Mat& image, Camera *cam, double visualize2d_points[12][2], const cv::Scalar& color) const {
 	// Cube
-	for (int i=0; i<4; i++) {
-		cvLine(image, cvPoint((int)visualize2d_points[i][0], (int)visualize2d_points[i][1]), cvPoint((int)visualize2d_points[(i+1)%4][0], (int)visualize2d_points[(i+1)%4][1]), color);
-		cvLine(image, cvPoint((int)visualize2d_points[i][0], (int)visualize2d_points[i][1]), cvPoint((int)visualize2d_points[4+i][0], (int)visualize2d_points[4+i][1]), color);
-		cvLine(image, cvPoint((int)visualize2d_points[4+i][0], (int)visualize2d_points[4+i][1]), cvPoint((int)visualize2d_points[4+((i+1)%4)][0], (int)visualize2d_points[4+((i+1)%4)][1]), color);
+	for (int i=0; i<4; i++)
+	{
+		cv::line(image,
+				 cv::Point((int)visualize2d_points[i][0], (int)visualize2d_points[i][1]),
+				 cv::Point((int)visualize2d_points[(i+1)%4][0], (int)visualize2d_points[(i+1)%4][1]),
+				 color);
+		cv::line(image,
+				 cv::Point((int)visualize2d_points[i][0], (int)visualize2d_points[i][1]),
+				 cv::Point((int)visualize2d_points[4+i][0], (int)visualize2d_points[4+i][1]),
+				 color);
+		cv::line(image,
+				 cv::Point((int)visualize2d_points[4+i][0], (int)visualize2d_points[4+i][1]),
+				 cv::Point((int)visualize2d_points[4+((i+1)%4)][0], (int)visualize2d_points[4+((i+1)%4)][1]),
+				 color);
 	}
 	// Coordinates
-	cvLine(image, cvPoint((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]), cvPoint((int)visualize2d_points[9][0], (int)visualize2d_points[9][1]), CV_RGB(255,0,0));
-	cvLine(image, cvPoint((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]), cvPoint((int)visualize2d_points[10][0], (int)visualize2d_points[10][1]), CV_RGB(0,255,0));
-	cvLine(image, cvPoint((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]), cvPoint((int)visualize2d_points[11][0], (int)visualize2d_points[11][1]), CV_RGB(0,0,255));
+	cv::line(image,
+			 cv::Point((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]),
+			 cv::Point((int)visualize2d_points[9][0], (int)visualize2d_points[9][1]),
+			 CV_RGB(255,0,0));
+	cv::line(image,
+			 cv::Point((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]),
+			 cv::Point((int)visualize2d_points[10][0], (int)visualize2d_points[10][1]),
+			 CV_RGB(0,255,0));
+	cv::line(image,
+			 cv::Point((int)visualize2d_points[8][0], (int)visualize2d_points[8][1]),
+			 cv::Point((int)visualize2d_points[11][0], (int)visualize2d_points[11][1]),
+			 CV_RGB(0,0,255));
 }
 
-void Marker::VisualizeMarkerContent(IplImage *image, Camera *cam, double datatext_point[2], double content_point[2]) const {
+void Marker::VisualizeMarkerContent(cv::Mat& image, Camera *cam, double datatext_point[2], double content_point[2]) const {
 #ifdef VISUALIZE_MARKER_POINTS
 	for (size_t i=0; i<marker_allpoints_img.size(); i++) {
 		if (marker_allpoints_img[i].val == 0)
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
 		else if (marker_allpoints_img[i].val == 255)
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
 		else
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
 	}
 #endif
 
 	// Marker data
-	CvFont font;
-	cvInitFont(&font, 0, 0.5, 0.5, 0);
 	std::stringstream val;
 	val<<int(GetId());
-	cvPutText(image, val.str().c_str(), cvPoint((int)datatext_point[0], (int)datatext_point[1]), &font, CV_RGB(255,255,0));
+	cv::putText(image, val.str(),
+                cv::Point((int)datatext_point[0], (int)datatext_point[1]), 0, 0.5,
+                CV_RGB(255, 255, 0));
 
 	// MarkerContent
 	int xc = int(content_point[0]);
@@ -75,63 +94,72 @@ void Marker::VisualizeMarkerContent(IplImage *image, Camera *cam, double datatex
 		for (int i=0; i<res*3; i++) {
 			int x = xc+i;
 			int y = yc+j;
-			if ((x >= 0) && (x < image->width) &&
-				(y >= 0) && (y < image->height))
+			if ((x >= 0) && (x < image.cols) && (y >= 0) && (y < image.rows))
 			{
-				if (cvGet2D(marker_content, j/3, i/3).val[0]) {
-					cvSet2D(image, y, x, CV_RGB(255,255,255));
-				} else {
-					cvSet2D(image, y, x, CV_RGB(0,0,0));
-				}
+				if (marker_content.at<uchar>(j / 3, i / 3))
+					image.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
+				else
+					image.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
 			}
 		}
 	}
 }
 
-void Marker::VisualizeMarkerError(IplImage *image, Camera *cam, double errortext_point[2]) const {
-	CvFont font;
-	cvInitFont(&font, 0, 0.5, 0.5, 0);
+void Marker::VisualizeMarkerError(cv::Mat& image, Camera *cam, double errortext_point[2]) const
+{
 	std::stringstream val;
-	if (GetError(MARGIN_ERROR|DECODE_ERROR) > 0) {
+	if (GetError(MARGIN_ERROR|DECODE_ERROR) > 0)
+	{
 		val.str("");
 		val<<int(GetError(MARGIN_ERROR)*100)<<"% ";
 		val<<int(GetError(DECODE_ERROR)*100)<<"% ";
-		cvPutText(image, val.str().c_str(), cvPoint((int)errortext_point[0], (int)errortext_point[1]), &font, CV_RGB(255,0,0));
-	} else if (GetError(TRACK_ERROR) > 0.01) {
+		cv::putText(image, val.str(),
+					cv::Point((int)errortext_point[0], (int)errortext_point[1]), 0,
+					0.5, CV_RGB(255, 0, 0));
+	}
+	else if (GetError(TRACK_ERROR) > 0.01)
+	{
 		val.str("");
 		val<<int(GetError(TRACK_ERROR)*100)<<"%";
-		cvPutText(image, val.str().c_str(), cvPoint((int)errortext_point[0], (int)errortext_point[1]), &font, CV_RGB(128,0,0));
+		cv::putText(image, val.str(),
+					cv::Point((int)errortext_point[0], (int)errortext_point[1]), 0,
+					0.5, CV_RGB(128, 0, 0));
 	}
 }
 
-void MarkerData::VisualizeMarkerContent(IplImage *image, Camera *cam, double datatext_point[2], double content_point[2]) const {
+void MarkerData::VisualizeMarkerContent(cv::Mat& image, Camera *cam, double datatext_point[2], double content_point[2]) const
+{
 #ifdef VISUALIZE_MARKER_POINTS
 	for (size_t i=0; i<marker_allpoints_img.size(); i++) {
 		if (marker_allpoints_img[i].val == 0)
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(0, 255,0));
 		else if (marker_allpoints_img[i].val == 255)
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 1, CV_RGB(255, 0,0));
 		else
-			cvCircle(image, cvPoint(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
+			cvCircle(image, cv::Point(int(marker_allpoints_img[i].x), int(marker_allpoints_img[i].y)), 2, CV_RGB(255,255,0));
 	}
 #endif
 
 	// Marker data
-	CvFont font;
-	cvInitFont(&font, 0, 0.5, 0.5, 0);
 	std::stringstream val;
-	CvScalar rgb=CV_RGB(255,255,0);
-	if (content_type == MARKER_CONTENT_TYPE_NUMBER) {
-		val<<int(GetId());
-	} else {
-		if (content_type == MARKER_CONTENT_TYPE_FILE) rgb=CV_RGB(0,255,255);
-		if (content_type == MARKER_CONTENT_TYPE_HTTP) rgb=CV_RGB(255,0,255);
-		val<<data.str;
+	cv::Scalar rgb = CV_RGB(255,255,0);
+	if (content_type == MARKER_CONTENT_TYPE_NUMBER)
+		val << int(GetId());
+	else
+	{
+		if (content_type == MARKER_CONTENT_TYPE_FILE)
+			rgb = CV_RGB(0,255,255);
+		if (content_type == MARKER_CONTENT_TYPE_HTTP)
+			rgb = CV_RGB(255,0,255);
+		val << data.str;
 	}
-	cvPutText(image, val.str().c_str(), cvPoint((int)datatext_point[0], (int)datatext_point[1]), &font, rgb);
+	cv::putText(image, val.str(),
+                cv::Point((int)datatext_point[0], (int)datatext_point[1]), 0, 0.5,
+                rgb);
 }
 
-void Marker::Visualize(IplImage *image, Camera *cam, CvScalar color) const {
+void Marker::Visualize(cv::Mat& image, Camera *cam, const cv::Scalar& color) const
+{
 	double visualize3d_points[12][3] = {
 		// cube
 		{ -(edge_length/2), -(edge_length/2), 0 },
@@ -149,22 +177,22 @@ void Marker::Visualize(IplImage *image, Camera *cam, CvScalar color) const {
 		{  0, 0, edge_length },
 	};
 	double visualize2d_points[12][2];
-	CvMat visualize3d_points_mat;
-	CvMat visualize2d_points_mat;
-	cvInitMatHeader(&visualize3d_points_mat, 12, 3, CV_64F, visualize3d_points);
-	cvInitMatHeader(&visualize2d_points_mat, 12, 2, CV_64F, visualize2d_points);
-	cam->ProjectPoints(&visualize3d_points_mat, &pose, &visualize2d_points_mat);
+	cv::Mat visualize3d_points_mat = cv::Mat(12, 3, CV_64F, visualize3d_points);
+	cv::Mat visualize2d_points_mat = cv::Mat(12, 2, CV_64F, visualize2d_points);
+	cam->ProjectPoints(visualize3d_points_mat, &pose, visualize2d_points_mat);
 
 	VisualizeMarkerPose(image, cam, visualize2d_points, color);
 	VisualizeMarkerContent(image, cam, visualize2d_points[0], visualize2d_points[8]);
 	VisualizeMarkerError(image, cam, visualize2d_points[2]);
 }
 
-void Marker::CompareCorners(vector<PointDouble > &_marker_corners_img, int *orientation, double *error) {
-	vector<PointDouble >::iterator corners_new = _marker_corners_img.begin();
-	vector<PointDouble >::const_iterator corners_old = marker_corners_img.begin();
+void Marker::CompareCorners(vector<PointDouble> &_marker_corners_img, int *orientation, double *error)
+{
+	vector<PointDouble>::iterator corners_new = _marker_corners_img.begin();
+	vector<PointDouble>::const_iterator corners_old = marker_corners_img.begin();
 	vector<double> errors(4);
-	for (int i=0; i<4; i++) {
+	for (int i=0; i<4; i++)
+	{
 		errors[0] += PointSquaredDistance(marker_corners_img[i], _marker_corners_img[i]);
 		errors[1] += PointSquaredDistance(marker_corners_img[i], _marker_corners_img[(i+1)%4]);
 		errors[2] += PointSquaredDistance(marker_corners_img[i], _marker_corners_img[(i+2)%4]);
@@ -175,18 +203,20 @@ void Marker::CompareCorners(vector<PointDouble > &_marker_corners_img, int *orie
 	*error /= sqrt(max(PointSquaredDistance(marker_corners_img[0], marker_corners_img[2]), PointSquaredDistance(marker_corners_img[1], marker_corners_img[3])));
 }
 
-void Marker::CompareContent(vector<PointDouble > &_marker_corners_img, IplImage *gray, Camera *cam, int *orientation) const {
+void Marker::CompareContent(vector<PointDouble> &_marker_corners_img, cv::Mat& gray, Camera *cam, int *orientation) const
+{
 	// TODO: Note, that to use this method you need to straighten the content
 	// TODO: This method can be used with image based trackingt
-
 }
 
-bool Marker::UpdateContent(vector<PointDouble > &_marker_corners_img, IplImage *gray, Camera *cam, int frame_no /*= 0*/) {
+bool Marker::UpdateContent(vector<PointDouble> &_marker_corners_img, cv::Mat& gray, Camera *cam, int frame_no /*= 0*/)
+{
 	return UpdateContentBasic(_marker_corners_img, gray, cam, frame_no);
 }
 
-bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplImage *gray, Camera *cam, int frame_no /*= 0*/) {
-	vector<PointDouble > marker_corners_img_undist;
+bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Mat& gray, Camera *cam, int frame_no /*= 0*/)
+{
+	vector<PointDouble> marker_corners_img_undist;
 	marker_corners_img_undist.resize(_marker_corners_img.size());
 	copy(_marker_corners_img.begin(), _marker_corners_img.end(), marker_corners_img_undist.begin());
 
@@ -204,12 +234,14 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
     // Read the content
     int x, y;
 	double min = 255.0, max = 0.0;
-	for (int j=0; j<marker_content->height; j++) {
-		for (int i=0; i<marker_content->width; i++) {
-			x = (int)(0.5+Limit(marker_points_img[(j*marker_content->width)+i].x, 1, gray->width-2));
-			y = (int)(0.5+Limit(marker_points_img[(j*marker_content->width)+i].y, 1, gray->height-2));
+	for (int j=0; j<marker_content.rows; j++)
+	{
+		for (int i=0; i<marker_content.cols; i++)
+		{
+			x = (int)(0.5 + Limit(marker_points_img[(j*marker_content.cols)+i].x, 1, gray.cols - 2));
+			y = (int)(0.5 + Limit(marker_points_img[(j*marker_content.cols)+i].y, 1, gray.rows - 2));
 
-			marker_points_img[(j*marker_content->width)+i].val = (int)cvGetReal2D(gray, y, x);
+			marker_points_img[(j*marker_content.cols)+i].val = (int)gray.at<uchar>(y, x);
 
 			ros_marker_points_img.push_back(PointDouble(x,y));
 
@@ -226,9 +258,11 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 			tmp = vals[2];
 			*/
 
-			cvSet2D(marker_content, j, i, cvScalar(marker_points_img[(j*marker_content->width)+i].val));
-			if(marker_points_img[(j*marker_content->width)+i].val > max) max = marker_points_img[(j*marker_content->width)+i].val;
-			if(marker_points_img[(j*marker_content->width)+i].val < min) min = marker_points_img[(j*marker_content->width)+i].val;
+			marker_content.at<uchar>(j, i) = marker_points_img[(j * marker_content.cols) + i].val;
+			if(marker_points_img[(j*marker_content.cols)+i].val > max)
+				max = marker_points_img[(j*marker_content.cols)+i].val;
+			if(marker_points_img[(j*marker_content.cols)+i].val < min)
+				min = marker_points_img[(j*marker_content.cols)+i].val;
 		}
 	}
 
@@ -242,38 +276,41 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 	cam->Distort(marker_margin_b_img);
 
 	min = max = 0; // Now min and max values are averages over black and white border pixels.
-	for (size_t i=0; i<marker_margin_w_img.size(); i++) {
-		x = (int)(0.5+Limit(marker_margin_w_img[i].x, 0, gray->width-1));
-		y = (int)(0.5+Limit(marker_margin_w_img[i].y, 0, gray->height-1));
-		marker_margin_w_img[i].val = (int)cvGetReal2D(gray, y, x);
+	for (size_t i=0; i<marker_margin_w_img.size(); i++)
+	{
+		x = (int)(0.5 + Limit(marker_margin_w_img[i].x, 0, gray.cols-1));
+		y = (int)(0.5 + Limit(marker_margin_w_img[i].y, 0, gray.rows-1));
+		marker_margin_w_img[i].val = (int)gray.at<uchar>(y, x);
 		max += marker_margin_w_img[i].val;
-		//if(marker_margin_w_img[i].val > max) max = marker_margin_w_img[i].val;
-		//if(marker_margin_w_img[i].val < min) min = marker_margin_w_img[i].val;
 	}
-	for (size_t i=0; i<marker_margin_b_img.size(); i++) {
-		x = (int)(0.5+Limit(marker_margin_b_img[i].x, 0, gray->width-1));
-		y = (int)(0.5+Limit(marker_margin_b_img[i].y, 0, gray->height-1));
-		marker_margin_b_img[i].val = (int)cvGetReal2D(gray, y, x);
+
+	for (size_t i=0; i<marker_margin_b_img.size(); i++)
+	{
+		x = (int)(0.5 + Limit(marker_margin_b_img[i].x, 0, gray.cols-1));
+		y = (int)(0.5 + Limit(marker_margin_b_img[i].y, 0, gray.rows-1));
+		marker_margin_b_img[i].val = (int)gray.at<uchar>(y, x);
 		min += marker_margin_b_img[i].val;
-		//if(marker_margin_b_img[i].val > max) max = marker_margin_b_img[i].val;
-		//if(marker_margin_b_img[i].val < min) min = marker_margin_b_img[i].val;
         ros_marker_points_img.push_back(PointDouble(x,y));
 	}
 	max /= marker_margin_w_img.size();
 	min /= marker_margin_b_img.size();
 
 	// Threshold the marker content
-	cvThreshold(marker_content, marker_content, (max+min)/2.0, 255, CV_THRESH_BINARY);
+	cv::threshold(marker_content, marker_content, (max + min) / 2.0, 255, cv::THRESH_BINARY);
 
 	// Count erroneous margin nodes
 	int erroneous = 0;
 	int total = 0;
-	for (size_t i=0; i<marker_margin_w_img.size(); i++) {
-		if (marker_margin_w_img[i].val < (max+min)/2.0) erroneous++;
+	for (size_t i=0; i<marker_margin_w_img.size(); i++)
+	{
+		if (marker_margin_w_img[i].val < (max+min)/2.0)
+			erroneous++;
 		total++;
 	}
-	for (size_t i=0; i<marker_margin_b_img.size(); i++) {
-		if (marker_margin_b_img[i].val > (max+min)/2.0) erroneous++;
+	for (size_t i=0; i<marker_margin_b_img.size(); i++)
+	{
+		if (marker_margin_b_img[i].val > (max+min)/2.0)
+			erroneous++;
 		total++;
 	}
 	margin_error = (double)erroneous/total;
@@ -284,26 +321,28 @@ bool Marker::UpdateContentBasic(vector<PointDouble > &_marker_corners_img, IplIm
 	// TODO: this whole vector is only for debug purposes
 	marker_allpoints_img.clear();
 	for (size_t i=0; i<marker_margin_w_img.size(); i++) {
-		PointDouble p = marker_margin_w_img[i];
+		PointDoublep = marker_margin_w_img[i];
 		if (p.val < (max+min)/2.0) p.val=255; // error
 		else p.val=0; // ok
 		marker_allpoints_img.push_back(p);
 	}
 	for (size_t i=0; i<marker_margin_b_img.size(); i++) {
-		PointDouble p = marker_margin_b_img[i];
+		PointDoublep = marker_margin_b_img[i];
 		if (p.val > (max+min)/2.0) p.val=255; // error
 		else p.val=0; // ok
 		marker_allpoints_img.push_back(p);
 	}
 	for (size_t i=0; i<marker_points_img.size(); i++) {
-		PointDouble p = marker_points_img[i];
+		PointDoublep = marker_points_img[i];
 		p.val=128; // Unknown?
 		marker_allpoints_img.push_back(p);
 	}
 #endif
 	return true;
 }
-void Marker::UpdatePose(vector<PointDouble > &_marker_corners_img, Camera *cam, int orientation, int frame_no /* =0 */, bool update_pose /* =true */) {
+
+void Marker::UpdatePose(vector<PointDouble> &_marker_corners_img, Camera *cam, int orientation, int frame_no /* =0 */, bool update_pose /* =true */)
+{
 	marker_corners_img.resize(_marker_corners_img.size());
 	copy(_marker_corners_img.begin(), _marker_corners_img.end(), marker_corners_img.begin());
 
@@ -313,44 +352,48 @@ void Marker::UpdatePose(vector<PointDouble > &_marker_corners_img, Camera *cam, 
 
 	if (update_pose) cam->CalcExteriorOrientation(marker_corners, marker_corners_img, &pose);
 }
-bool Marker::DecodeContent(int *orientation) {
+
+bool Marker::DecodeContent(int *orientation)
+{
 	*orientation = 0;
 	decode_error = 0;
 	return true;
 }
 
-void Marker::SaveMarkerImage(const char *filename, int save_res) const {
+void Marker::SaveMarkerImage(const char *filename, int save_res) const
+{
 	double scale;
-	if (save_res == 0) {
+	if (save_res == 0)
+	{
 		// TODO: More intelligent deduction of a minimum save_res
 		save_res = int((res+margin+margin)*12);
 	}
 	scale = double(save_res)/double(res+margin+margin);
 
-	IplImage *img = cvCreateImage(cvSize(save_res, save_res), IPL_DEPTH_8U, 1);
-	IplImage *img_content = cvCreateImage(cvSize(int(res*scale+0.5), int(res*scale+0.5)), IPL_DEPTH_8U, 1);
-	cvZero(img);
-	CvMat submat;
-	cvGetSubRect(img, &submat, cvRect(int(margin*scale), int(margin*scale), int(res*scale), int(res*scale)));
-	cvResize(marker_content, img_content, CV_INTER_NN);
-	cvCopy(img_content, &submat);
-	cvSaveImage(filename, img);
-	cvReleaseImage(&img_content);
-	cvReleaseImage(&img);
+	cv::Mat img = cv::Mat::zeros(save_res, save_res, CV_8UC1);
+  	cv::Mat img_content = cv::Mat(cv::Size(int(res * scale + 0.5), int(res * scale + 0.5)), CV_8UC1);
+  	cv::Mat submat = img(cv::Rect(int(margin * scale), int(margin * scale), int(res * scale), int(res * scale)));
+  	cv::resize(marker_content, img_content, img_content.size(), 0, 0, cv::INTER_NEAREST);
+	img_content.copyTo(submat);
+	cv::imwrite(filename, img);
+	img_content.release();
+	img.release();
 }
 
-void Marker::ScaleMarkerToImage(IplImage *image) const {
-	const int multiplier=96;
-	IplImage *img = cvCreateImage(cvSize(int(multiplier*(res+margin+margin)+0.5), int(multiplier*(res+margin+margin)+0.5)), IPL_DEPTH_8U, 1);
-	IplImage *img_content = cvCreateImage(cvSize(int(multiplier*res+0.5), int(multiplier*res+0.5)), IPL_DEPTH_8U, 1);
-	cvZero(img);
-	CvMat submat;
-	cvGetSubRect(img, &submat, cvRect(int(multiplier*margin+0.5), int(multiplier*margin+0.5), int(multiplier*res+0.5), int(multiplier*res+0.5)));
-	cvResize(marker_content, img_content, CV_INTER_NN);
-	cvCopy(img_content, &submat);
-	cvResize(img, image, CV_INTER_NN);
-	cvReleaseImage(&img_content);
-	cvReleaseImage(&img);
+void Marker::ScaleMarkerToImage(cv::Mat& image) const
+{
+	const int multiplier = 96;
+	cv::Mat img = cv::Mat::zeros(cv::Size(int(multiplier * (res + margin + margin) + 0.5),
+								int(multiplier * (res + margin + margin) + 0.5)),
+								CV_8UC1);
+	cv::Mat img_content = cv::Mat(cv::Size(int(multiplier * res + 0.5), int(multiplier * res + 0.5)), CV_8UC1);
+	cv::Mat submat = img(cv::Rect(int(multiplier * margin + 0.5), int(multiplier * margin + 0.5),
+						 int(multiplier * res + 0.5), int(multiplier * res + 0.5)));
+	cv::resize(marker_content, img_content, img_content.size(), 0, 0, cv::INTER_NEAREST);
+	img_content.copyTo(submat);
+	cv::resize(img, image, image.size(), 0, 0, cv::INTER_NEAREST);
+	img_content.release();
+	img.release();
 }
 
 void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
@@ -385,7 +428,7 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	marker_points.clear();
 	for(int j = 0; j < res; ++j) {
 		for(int i = 0; i < res; ++i) {
-			PointDouble  pt;
+			PointDouble pt;
 			pt.y = cy_max - (step*j) - (step/2);
 			pt.x = cx_min + (step*i) + (step/2);
 			marker_points.push_back(pt);
@@ -398,7 +441,7 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	marker_margin_w.clear();
 	marker_margin_b.clear();
 	for(int j = -1; j<=margin-1; j++) {
-		PointDouble  pt;
+		PointDouble pt;
 		// Sides
 		for (int i=0; i<res; i++) {
 			pt.x = cx_min + step*i + step/2;
@@ -436,88 +479,21 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 			else marker_margin_b.push_back(pt);
 		}
 	}
-	/*
-	for(int j = -margin-1; j < res+margin+margin+2; ++j) {
-		for(int i = 0; i < res+margin+margin+2; ++i) {
-			PointDouble  pt;
-			pt.y = y_min - step/2 + step*j;
-			pt.x = x_min - step/2 + step*i;
-			if ((pt.x < x_min) || (pt.y < y_min) ||
-				(pt.x > x_max) || (pt.y > y_max))
-			{
-				marker_margin_w.push_back(pt);
-			}
-			else
-			if ((pt.x < cx_min) || (pt.y < cy_min) ||
-				(pt.x > cx_max) || (pt.y > cy_max))
-			{
-				marker_margin_b.push_back(pt);
-			}
-		}
-	}
-	/*
-	//double step = edge_length / (res + margin + margin);
-	for(int j = 0; j < res+margin+margin+2; ++j) {
-		for(int i = 0; i < res+margin+margin+2; ++i) {
-			PointDouble  pt;
-			pt.y = y_min - step/2 + step*j;
-			pt.x = x_min - step/2 + step*i;
-			if ((pt.x < x_min) || (pt.y < y_min) ||
-				(pt.x > x_max) || (pt.y > y_max))
-			{
-				marker_margin_w.push_back(pt);
-			}
-			else
-			if ((pt.x < cx_min) || (pt.y < cy_min) ||
-				(pt.x > cx_max) || (pt.y > cy_max))
-			{
-				marker_margin_b.push_back(pt);
-			}
-		}
-	}
-	*/
-	/*
-	marker_margin_w.clear();
-	marker_margin_b.clear();
-	for (double y=y_min-(step/2); y<y_max+(step/2); y+=step) {
-		for (double x=x_min-(step/2); x<x_max+(step/2); x+=step) {
-			PointDouble pt(x, y);
-			if ((x < x_min) || (y < y_min) ||
-				(x > x_max) || (y > y_max))
-			{
-				marker_margin_w.push_back(pt);
-			}
-			else
-			if ((x < cx_min) || (y < cy_min) ||
-				(x > cx_max) || (y > cy_max))
-			{
-				marker_margin_b.push_back(pt);
-			}
-		}
-	}
-	*/
-	/*
-	marker_points.clear();
-	marker_margin_w.clear();
-	marker_margin_b.clear();
-	for(int j = 0; j < res+margin+margin+2; ++j) {
-		for(int i = 0; i < res+margin+margin+2; ++i) {
-			PointDouble  pt;
-		}
-	}
-	*/
 
 	// marker content
-	if (marker_content) cvReleaseMat(&marker_content);
-	marker_content = cvCreateMat(res, res, CV_8U);
-	cvSet(marker_content, cvScalar(255));
+	if (!marker_content.empty())
+		marker_content.release();
+	marker_content = cv::Mat(res, res, CV_8U, cv::Scalar(255));
 }
-Marker::~Marker() {
-	if (marker_content) cvReleaseMat(&marker_content);
+
+Marker::~Marker()
+{
+	if (!marker_content.empty())
+    	marker_content.release();
 }
+
 Marker::Marker(double _edge_length, int _res, double _margin)
 {
-	marker_content = NULL;
 	margin_error = 0;
 	decode_error = 0;
 	track_error = 0;
@@ -526,15 +502,16 @@ Marker::Marker(double _edge_length, int _res, double _margin)
 	ros_corners_3D.resize(4);
 	valid=false;
 }
-Marker::Marker(const Marker& m) {
-	marker_content = NULL;
+
+Marker::Marker(const Marker& m)
+{
 	SetMarkerSize(m.edge_length, m.res, m.margin);
 
 	pose = m.pose;
 	margin_error = m.margin_error;
 	decode_error = m.decode_error;
 	track_error = m.track_error;
-	cvCopy(m.marker_content, marker_content);
+	m.marker_content.copyTo(marker_content);
     ros_orientation = m.ros_orientation;
 
 	ros_marker_points_img.resize(m.ros_marker_points_img.size());
@@ -555,11 +532,12 @@ Marker::Marker(const Marker& m) {
 #endif
 }
 
-bool MarkerArtoolkit::DecodeContent(int *orientation) {
-	int a = (int)cvGetReal2D(marker_content, 0, 0);
-	int b = (int)cvGetReal2D(marker_content, res-1, 0);
-	int c = (int)cvGetReal2D(marker_content, res-1, res-1);
-	int d = (int)cvGetReal2D(marker_content, 0, res-1);
+bool MarkerArtoolkit::DecodeContent(int *orientation)
+{
+	int a = (int)marker_content.at<uchar>(0, 0);
+	int b = (int)marker_content.at<uchar>(res - 1, 0);
+	int c = (int)marker_content.at<uchar>(res - 1, res - 1);
+	int d = (int)marker_content.at<uchar>(0, res - 1);
 	if (!a && !b && c) *orientation = 0;
 	else if (!b && !c && d) *orientation = 1;
 	else if (!c && !d && a) *orientation = 2;
@@ -574,28 +552,28 @@ bool MarkerArtoolkit::DecodeContent(int *orientation) {
 				if ((j == 0)     && (i == 0)) continue;
 				if ((j == res-1) && (i == 0)) continue;
 				if ((j == res-1) && (i == res-1)) continue;
-				if (cvGetReal2D(marker_content, j, i)) bs.push_back(false);
+				if (marker_content.at<uchar>(j, i)) bs.push_back(false);
 				else bs.push_back(true);
 			}
 			else if (*orientation == 1) {
 				if (((res-i-1) == res-1) && (j == 0)) continue;
 				if (((res-i-1) == res-1) && (j == res-1)) continue;
 				if (((res-i-1) == 0)     && (j == res-1)) continue;
-				if (cvGetReal2D(marker_content, res-i-1, j)) bs.push_back(false);
+				if (marker_content.at<uchar>(res-i-1, j)) bs.push_back(false);
 				else bs.push_back(true);
 			}
 			else if (*orientation == 2) {
 				if (((res-j-1) == res-1) && ((res-i-1) == res-1)) continue;
 				if (((res-j-1) == 0)     && ((res-i-1) == res-1)) continue;
 				if (((res-j-1) == 0)     && ((res-i-1) == 0)) continue;
-				if (cvGetReal2D(marker_content, res-j-1, res-i-1)) bs.push_back(false);
+				if (marker_content.at<uchar>(res-j-1, res-i-1)) bs.push_back(false);
 				else bs.push_back(true);
 			}
 			else if (*orientation == 3) {
 				if ((i == 0)     && ((res-j-1) == res-1)) continue;
 				if ((i == 0)     && ((res-j-1) == 0)) continue;
 				if ((i == res-1) && ((res-j-1) == 0)) continue;
-				if (cvGetReal2D(marker_content, i, res-j-1)) bs.push_back(false);
+				if (marker_content.at<uchar>(i, res-j-1)) bs.push_back(false);
 				else bs.push_back(true);
 			}
 		}
@@ -604,7 +582,8 @@ bool MarkerArtoolkit::DecodeContent(int *orientation) {
 	return true;
 }
 
-void MarkerArtoolkit::SetContent(unsigned long _id) {
+void MarkerArtoolkit::SetContent(unsigned long _id)
+{
 	// Fill in the content values
 	margin_error = 0;
 	decode_error = 0;
@@ -614,22 +593,23 @@ void MarkerArtoolkit::SetContent(unsigned long _id) {
 	for (int j = res-1; j >= 0; j--) {
 		for (int i = res-1; i >= 0 ; i--) {
 			if ((j == 0)     && (i == 0))
-				cvSetReal2D(marker_content, j, i, 0);
+				marker_content.at<uchar>(j, i) = 0;
 			else if ((j == res-1) && (i == 0))
-				cvSetReal2D(marker_content, j, i, 0);
+				marker_content.at<uchar>(j, i) = 0;
 			else if ((j == res-1) && (i == res-1))
-				cvSetReal2D(marker_content, j, i, 255);
+				marker_content.at<uchar>(j, i) = 255;
 			else {
 				if (bs.Length() && bs.pop_back())
-					cvSetReal2D(marker_content, j, i, 0);
+					marker_content.at<uchar>(j, i) = 0;
 				else
-					cvSetReal2D(marker_content, j, i, 255);
+					marker_content.at<uchar>(j, i) = 255;
 			}
 		}
 	}
 }
 
-void MarkerData::DecodeOrientation(int *error, int *total, int *orientation) {
+void MarkerData::DecodeOrientation(int *error, int *total, int *orientation)
+{
 	int i,j;
 	vector<double> errors(4);
 	int color = 255;
@@ -638,8 +618,8 @@ void MarkerData::DecodeOrientation(int *error, int *total, int *orientation) {
 	j = res/2;
 	for (i=0; i<res; i++) {
 		(*total)++;
-		if ((int)cvGetReal2D(marker_content, j, i) != color) errors[0]++;
-		if ((int)cvGetReal2D(marker_content, i, j) != color) errors[1]++;
+		if ((int)marker_content.at<uchar>(j, i) != color) errors[0]++;
+		if ((int)marker_content.at<uchar>(i, j) != color) errors[1]++;
 		color = (color?0:255);
 	}
 	errors[2] = errors[0];
@@ -650,24 +630,24 @@ void MarkerData::DecodeOrientation(int *error, int *total, int *orientation) {
 	for (j = (res/2)-2; j <= (res/2)+2; j++) {
 		if (j < (res/2)) {
 			(*total)++;
-			if ((int)cvGetReal2D(marker_content, j, i)       !=   0) errors[0]++;
-			if ((int)cvGetReal2D(marker_content, i, j)       !=   0) errors[1]++;
-			if ((int)cvGetReal2D(marker_content, j, i)       != 255) errors[2]++;
-			if ((int)cvGetReal2D(marker_content, i, j)       != 255) errors[3]++;
+			if ((int)marker_content.at<uchar>(j, i)       !=   0) errors[0]++;
+			if ((int)marker_content.at<uchar>(i, j)       !=   0) errors[1]++;
+			if ((int)marker_content.at<uchar>(j, i)       != 255) errors[2]++;
+			if ((int)marker_content.at<uchar>(i, j)       != 255) errors[3]++;
 		} else if (j > (res/2)) {
 			(*total)++;
-			if ((int)cvGetReal2D(marker_content, j, i)       != 255) errors[0]++;
-			if ((int)cvGetReal2D(marker_content, i, j)       != 255) errors[1]++;
-			if ((int)cvGetReal2D(marker_content, j, i)       !=   0) errors[2]++;
-			if ((int)cvGetReal2D(marker_content, i, j)       !=   0) errors[3]++;
+			if ((int)marker_content.at<uchar>(j, i)       != 255) errors[0]++;
+			if ((int)marker_content.at<uchar>(i, j)       != 255) errors[1]++;
+			if ((int)marker_content.at<uchar>(j, i)       !=   0) errors[2]++;
+			if ((int)marker_content.at<uchar>(i, j)       !=   0) errors[3]++;
 		}
 	}
 	*orientation = min_element(errors.begin(), errors.end()) - errors.begin();
 	*error = int(errors[*orientation]);
-	//*orientation = 0; // ttehop
 }
 
-bool MarkerData::DetectResolution(vector<PointDouble > &_marker_corners_img, IplImage *gray, Camera *cam) {
+bool MarkerData::DetectResolution(vector<PointDouble> &_marker_corners_img, cv::Mat& gray, Camera *cam)
+{
 	vector<PointDouble> marker_corners_img_undist;
 	marker_corners_img_undist.resize(_marker_corners_img.size());
 	copy(_marker_corners_img.begin(), _marker_corners_img.end(), marker_corners_img_undist.begin());
@@ -697,30 +677,30 @@ bool MarkerData::DetectResolution(vector<PointDouble > &_marker_corners_img, Ipl
 	// Now we have undistorted line end points
 	// Find lines and then distort the whole line
 	int white_count[4] = {0}; // white counts for lines 1->0, 2->0, 3->0, 4->0
-	CvPoint pt1, pt2;
+	cv::Point pt1, pt2;
 	pt2.x = int(line_points_img[0].x);
 	pt2.y = int(line_points_img[0].y);
 	if ((pt2.x < 0) || (pt2.y < 0) ||
-		(pt2.x >= gray->width) || (pt2.y >= gray->height))
+		(pt2.x >= gray.cols) || (pt2.y >= gray.rows))
 	{
 		return false;
 	}
 	bool white=true;
-	for (int i=0; i<4; i++) {
-		CvLineIterator iterator;
+	for (int i=0; i<4; i++)
+	{
 		pt1.x = int(line_points_img[i+1].x);
 		pt1.y = int(line_points_img[i+1].y);
 		if ((pt1.x < 0) || (pt1.y < 0) ||
-			(pt1.x >= gray->width) || (pt1.y >= gray->height))
+			(pt1.x >= gray.cols) || (pt1.y >= gray.rows))
 		{
 			return false;
 		}
-		int count = cvInitLineIterator(gray, pt1, pt2, &iterator, 8, 0);
+
+		cv::LineIterator iterator(gray, pt1, pt2, 8, false);
 		std::vector<uchar> vals;
-		for(int ii = 0; ii < count; ii++ ){
-			CV_NEXT_LINE_POINT(iterator);
+		for (int ii = 0; ii < iterator.count; ii++, ++iterator)
 			vals.push_back(*(iterator.ptr));
-		}
+		
 		uchar vmin = *(std::min_element(vals.begin(), vals.end()));
 		uchar vmax = *(std::max_element(vals.begin(), vals.end()));
 		uchar thresh = (vmin+vmax)/2;
@@ -761,10 +741,11 @@ bool MarkerData::DetectResolution(vector<PointDouble > &_marker_corners_img, Ipl
 	return true;
 }
 
-bool MarkerData::UpdateContent(vector<PointDouble > &_marker_corners_img, IplImage *gray, Camera *cam, int frame_no /*= 0*/) {
-	if (res == 0) {
-		if (!DetectResolution(_marker_corners_img, gray, cam)) return false;
-	}
+bool MarkerData::UpdateContent(vector<PointDouble> &_marker_corners_img, cv::Mat& gray, Camera *cam, int frame_no /*= 0*/) {
+	if (res == 0) 
+		if (!DetectResolution(_marker_corners_img, gray, cam))
+			return false;
+	
 	return UpdateContentBasic(_marker_corners_img, gray, cam, frame_no);
 }
 
@@ -784,10 +765,10 @@ int MarkerData::DecodeCode(int orientation, BitsetExt *bs, int *erroneous, int *
 				if ((j == res/2) && (i >= (res/2)-2) && (i <= (res/2)+2)) continue;
 			}
 			int color = 0;
-			if (orientation == 0) color = (int)cvGetReal2D(marker_content, j, i);
-			else if (orientation == 1) color = (int)cvGetReal2D(marker_content, res-i-1, j);
-			else if (orientation == 2) color = (int)cvGetReal2D(marker_content, res-j-1, res-i-1);
-			else if (orientation == 3) color = (int)cvGetReal2D(marker_content, i, res-j-1);
+			if (orientation == 0) color = (int)marker_content.at<uchar>(j, i);
+			else if (orientation == 1) color = (int)marker_content.at<uchar>(res-i-1, j);
+			else if (orientation == 2) color = (int)marker_content.at<uchar>(res-j-1, res-i-1);
+			else if (orientation == 3) color = (int)marker_content.at<uchar>(i, res-j-1);
 			if (color) bs->push_back(false);
 			else bs->push_back(true);
 			(*total)++;
@@ -1048,18 +1029,18 @@ void MarkerData::SetContent(MarkerContentType _content_type, unsigned long _id, 
 	bs.insert(bs.end(), bs_data.GetBits().begin(), bs_data.GetBits().end());
 	deque<bool>::const_iterator iter = bs.begin();
 	SetMarkerSize(edge_length, res, margin);
-	cvSet(marker_content, cvScalar(255));
+	marker_content = cv::Scalar(255);
 	for (int j=0; j<res; j++) {
 		for (int i=0; i<res; i++) {
 			if (j == res/2) {
-				if (i%2) cvSet2D(marker_content, j, i, cvScalar(0));
+				if (i%2) marker_content.at<uchar>(j, i) = 0;
 			} else if ((i == res/2) && (j < res/2) && (j >= (res/2)-2)) {
-				cvSet2D(marker_content, j, i, cvScalar(0));
+				marker_content.at<uchar>(j, i) = 0;
 			} else if ((i == res/2) && (j > res/2) && (j <= (res/2)+2)) {
-				cvSet2D(marker_content, j, i, cvScalar(255));
+				marker_content.at<uchar>(j, i) = 255;
 			} else {
 				if (iter != bs.end()) {
-					if (*iter) cvSet2D(marker_content, j, i, cvScalar(0));
+					if (*iter) marker_content.at<uchar>(j, i) = 0;
 					iter++;
 				}
 			}

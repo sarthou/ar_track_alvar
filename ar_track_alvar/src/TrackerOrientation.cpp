@@ -29,13 +29,13 @@ using namespace std;
 namespace alvar {
 using namespace std;
 
-void TrackerOrientation::Project(CvMat* state, CvMat* projection, void *param)
+void TrackerOrientation::Project(cv::Mat* state, cv::Mat* projection, void *param)
 {
 	TrackerOrientation *tracker = (TrackerOrientation*)param;
 	int count = projection->rows;
-	CvMat rot_mat = cvMat(3, 1, CV_64F, &(state->data.db[0+0]));
+	cv::Mat rot_mat = cv::Mat(3, 1, CV_64F, &(state->data.db[0+0]));
 	double zeros[3] = {0};
-	CvMat zero_tra = cvMat(3, 1, CV_64F, zeros);
+	cv::Mat zero_tra = cv::Mat(3, 1, CV_64F, zeros);
 	cvReshape(projection, projection, 2, 1);
 	cvProjectPoints2(tracker->_object_model, &rot_mat, &zero_tra, &(tracker->_camera->calib_K), &(tracker->_camera->calib_D), projection);
 	cvReshape(projection, projection, 1, count);
@@ -59,8 +59,8 @@ bool TrackerOrientation::UpdatePose(IplImage *image)
 	int count_points = _F_v.size();
 	if(count_points < 6) return false;
 
-	CvMat* _M = cvCreateMat(count_points, 1, CV_64FC3);
-	CvMat* image_observations = cvCreateMat(count_points*2, 1, CV_64F); // [u v u v u v ...]'
+	cv::Mat _M(count_points, 1, CV_64FC3);
+	cv::Mat* image_observations(count_points*2, 1, CV_64F); // [u v u v u v ...]'
 
 	//map<int,Feature>::iterator it;
 	int ind = 0;
@@ -70,50 +70,40 @@ bool TrackerOrientation::UpdatePose(IplImage *image)
 			it->second.status3D  == Feature::IS_INITIAL)  && 
 			it->second.status2D  == Feature::IS_TRACKED)
 		{
-			_M->data.db[ind*3+0] = it->second.point3d.x;
-			_M->data.db[ind*3+1] = it->second.point3d.y;
-			_M->data.db[ind*3+2] = it->second.point3d.z;
+			_M.data.db[ind*3+0] = it->second.point3d.x;
+			_M.data.db[ind*3+1] = it->second.point3d.y;
+			_M.data.db[ind*3+2] = it->second.point3d.z;
 
-			image_observations->data.db[ind*2+0] = it->second.point.x;
-			image_observations->data.db[ind*2+1] = it->second.point.y;
+			image_observations.data.db[ind*2+0] = it->second.point.x;
+			image_observations.data.db[ind*2+1] = it->second.point.y;
 			ind++;
 		}
 	}
 
 	if(ind < 6)
-	{			
-		cvReleaseMat(&image_observations);
-		cvReleaseMat(&_M);
-		return false;		
-	}
+		return false;
 
-	double rot[3]; CvMat rotm = cvMat(3, 1, CV_64F, rot);
+	double rot[3]; cv::Mat rotm = cv::Mat(3, 1, CV_64F, rot);
 	_pose.GetRodriques(&rotm);
 
-	CvMat* par = cvCreateMat(3, 1, CV_64F);
-	memcpy(&(par->data.db[0+0]), rot, 3*sizeof(double));
+	cv::Mat par(3, 1, CV_64F);
+	memcpy(&(par.data.db[0+0]), rot, 3*sizeof(double));
 	//par->data.db[3] = 0;
 
 	CvRect r; r.x = 0; r.y = 0; r.height = ind; r.width = 1;
-	CvMat Msub;
-	cvGetSubRect(_M, &Msub, r);
+	cv::Mat Msub = _M(r);
 	_object_model = &Msub;
 
 	r.height = 2*ind;
-	CvMat image_observations_sub;
-	cvGetSubRect(image_observations, &image_observations_sub, r);
+	cv::Mat image_observations_sub = image_observations(r);
 
 	alvar::Optimization *opt = new alvar::Optimization(3, 2*ind);
 	
-	double foo = opt->Optimize(par, &image_observations_sub, 0.0005, 5, Project, this, alvar::Optimization::TUKEY_LM);
-	memcpy(rot, &(par->data.db[0+0]), 3*sizeof(double));
+	double foo = opt->Optimize(&par, &image_observations_sub, 0.0005, 5, Project, this, alvar::Optimization::TUKEY_LM);
+	memcpy(rot, &(par.data.db[0+0]), 3*sizeof(double));
 	_pose.SetRodriques(&rotm);
 	
 	delete opt;
-
-	cvReleaseMat(&par);
-	cvReleaseMat(&image_observations);
-	cvReleaseMat(&_M);
 
 	return true;
 }
@@ -189,11 +179,11 @@ bool TrackerOrientation::UpdateRotationOnly(IplImage *gray, IplImage *image)
 			p.Invert();
 			
 			double Xd[4] = {wx, wy, wz, 1};
-			CvMat Xdm = cvMat(4, 1, CV_64F, Xd);
+			cv::Mat Xdm = cv::Mat(4, 1, CV_64F, Xd);
 			double Pd[16];
-			CvMat Pdm = cvMat(4, 4, CV_64F, Pd);
+			cv::Mat Pdm = cv::Mat(4, 4, CV_64F, Pd);
 			p.GetMatrix(&Pdm);
-			cvMatMul(&Pdm, &Xdm, &Xdm);
+			Xdm = Pdm * Xdm;
 			f->point3d.x = Xd[0]/Xd[3];
 			f->point3d.y = Xd[1]/Xd[3];
 			f->point3d.z = Xd[2]/Xd[3];
@@ -221,9 +211,9 @@ bool TrackerOrientation::UpdateRotationOnly(IplImage *gray, IplImage *image)
 			f->status3D == Feature::IS_INITIAL )
 		{				
 			double p3d[3] = {f->point3d.x, f->point3d.y, f->point3d.z};
-			CvMat p3dm = cvMat(1, 1, CV_64FC3, p3d);
+			cv::Mat p3dm = cv::Mat(1, 1, CV_64FC3, p3d);
 			double p2d[2];
-			CvMat p2dm = cvMat(2, 1, CV_64F, p2d);
+			cv::Mat p2dm = cv::Mat(2, 1, CV_64F, p2d);
 			cvReshape(&p2dm, &p2dm, 2, 1);
 			
 			double gl_mat[16];

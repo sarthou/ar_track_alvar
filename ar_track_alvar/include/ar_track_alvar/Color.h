@@ -1,5 +1,6 @@
 #include "ar_track_alvar/MultiMarker.h"
-#include "highgui.h"
+#include <opencv2/highgui.hpp>
+
 using namespace std;
 using namespace alvar;
 
@@ -20,5 +21,5 @@ namespace col
 
   unsigned char get_color(color_t p_color);
 
-  void change_color(IplImage *p_img, unsigned char p_color = 0);
+  void change_color(cv::Mat& p_img, unsigned char p_color = 0);
 }
