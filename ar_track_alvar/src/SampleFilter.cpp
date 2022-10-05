@@ -113,7 +113,7 @@ class KalmanOwn : public KalmanEkf {
         _x_pred->at(0, 0) = dy;
     }
 public:
-    KalmanOwn(int _n) : KalmanEkf(_n) {}
+    explicit KalmanOwn(int _n) : KalmanEkf(_n) {}
 };
 
 void filter_ekf(double x, double y, double *fx, double *fy) {

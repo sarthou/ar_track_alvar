@@ -104,8 +104,6 @@ void Optimization::CalcJacobian(cv::Mat& x, cv::Mat& J,
   J.setTo(cv::Scalar::all(0));
   for (int i = 0; i < J.cols; i++)
   {
-    cv::Mat J_column = J.col(i);
-
     delta.setTo(cv::Scalar::all(0));
     delta.at<double>(i, 0) = step;
     x_plus = x + delta;
@@ -114,7 +112,7 @@ void Optimization::CalcJacobian(cv::Mat& x, cv::Mat& J,
 
     Estimate(x_plus, x_tmp1, estimate_param);
     Estimate(x_minus, x_tmp2, estimate_param);
-    J_column = x_tmp1 - x_tmp2;
+    cv::Mat J_column = x_tmp1 - x_tmp2;
     J_column = J_column * 1.0 / (2 * step);
   }
 }

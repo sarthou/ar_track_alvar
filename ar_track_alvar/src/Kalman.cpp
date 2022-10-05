@@ -227,9 +227,6 @@ void KalmanSensorEkf::update_H(const cv::Mat& x_pred)
   H.setTo(cv::Scalar::all(0));
   for (int i = 0; i < n; i++)
   {
-    cv::Mat H_column;
-    H_column = H.col(i);
-
     delta.setTo(cv::Scalar::all(0));
     delta.at<double>(i, 0) = step;
     x_plus = x_pred + delta;
@@ -238,7 +235,7 @@ void KalmanSensorEkf::update_H(const cv::Mat& x_pred)
 
     h(x_plus, z_tmp1);
     h(x_minus, z_tmp2);
-    H_column = z_tmp1 - z_tmp2;
+    cv::Mat H_column = z_tmp1 - z_tmp2;
     H_column = H_column * (1.0 / (2 * step));
   }
 }
@@ -288,9 +285,6 @@ void KalmanEkf::update_F(unsigned long tick)
   F.setTo(cv::Scalar::all(0));
   for (int i = 0; i < n; i++)
   {
-    cv::Mat F_column;
-    F_column = F.col(i);
-
     delta.setTo(cv::Scalar::all(0));
     delta.at<double>(i, 0) = step;
     x_plus = x + delta;
@@ -299,7 +293,7 @@ void KalmanEkf::update_F(unsigned long tick)
 
     f(x_plus, x_tmp1, dt);
     f(x_minus, x_tmp2, dt);
-    F_column = x_tmp1 - x_tmp2;
+    cv::Mat F_column = x_tmp1 - x_tmp2;
     F_column = F_column * (1.0 / (2 * step));
   }
 }

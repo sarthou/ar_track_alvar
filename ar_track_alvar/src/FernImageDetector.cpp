@@ -296,7 +296,7 @@ void FernImageDetector::findFeatures(Mat &object, bool planeAssumption)
 	mLDetector(object/*objpyr*/, keypoints, N_PTS_TO_FIND);
 		
 	int m = mKeyPoints.size();
-	int n = keypoints.size();
+	//int n = keypoints.size();
     vector<int> bestMatches(m, -1);
     vector<float> maxLogProb(m, -FLT_MAX);
     vector<float> signature;

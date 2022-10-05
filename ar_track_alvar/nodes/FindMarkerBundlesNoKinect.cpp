@@ -113,7 +113,7 @@ void GetMultiMarkerPoses(cv::Mat& image, MarkerDetector<MarkerData>* marker_dete
 
 
 // Given the pose of a marker, builds the appropriate ROS messages for later publishing
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size){
+void makeMarkerMsgs(int type, int id, const Pose &p, sensor_msgs::ImageConstPtr image_msg, const tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size){
   double px,py,pz,qx,qy,qz,qw;
 
   px = p.translation[0]/100.0;
@@ -216,7 +216,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
       	tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
       	tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
       }
-      catch (tf::TransformException ex){
+      catch (tf::TransformException& ex){
 	      ROS_ERROR("%s",ex.what());
       }
 

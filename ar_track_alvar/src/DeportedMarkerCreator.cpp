@@ -227,12 +227,11 @@ int main(int argc, char *argv[])
             std::cout<<"  Marker side: "<<st.marker_side_len<<" units"<<std::endl;
             std::cout << std::endl;
 
-            bool loop=true;
             std::string s;
             int marker_id=0;
             double posx=0.0, posy=0.0, posz=0.0;
 
-            while(loop)
+            while(true)
             {
                 std::stringstream ss;
 
@@ -268,7 +267,8 @@ int main(int argc, char *argv[])
                 std::cout<<"  Y - yellow" << std::endl;
                 std::cout<<"  default - black :" << std::endl;
                 std::cout<<"  Marker color : "; std::flush(std::cout);
-                std::getline(std::cin, s); if (s.length() <= 0) s = " ";
+                std::getline(std::cin, s);
+                if (s.length() == 0) s = " ";
                 col::color_t tmp_color = col::get_color(s[0]);
                 st.color = col::get_color(tmp_color);
 

@@ -407,7 +407,7 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	double y_max = 0.5*edge_length;
 	double cx_min = (x_min * res)/(res + margin + margin);
 	double cy_min = (y_min * res)/(res + margin + margin);
-	double cx_max = (x_max * res)/(res + margin + margin);
+	//double cx_max = (x_max * res)/(res + margin + margin);
 	double cy_max = (y_max * res)/(res + margin + margin);
 	double step = edge_length / (res + margin + margin);
 
@@ -814,7 +814,7 @@ void MarkerData::Read6bitStr(BitsetExt *bs, char *s, size_t s_max_len) {
 	size_t len = 0;
 	int bitpos = 5;
 	unsigned long c=0;
-	for (iter = bits.begin(); iter != bits.end(); iter++) {
+	for (iter = bits.begin(); iter != bits.end(); ++iter) {
 		if (*iter) c |= (0x01 << bitpos);
 		bitpos--;
 		if (bitpos < 0) {
@@ -1041,7 +1041,7 @@ void MarkerData::SetContent(MarkerContentType _content_type, unsigned long _id, 
 			} else {
 				if (iter != bs.end()) {
 					if (*iter) marker_content.at<uchar>(j, i) = 0;
-					iter++;
+					++iter;
 				}
 			}
 		}

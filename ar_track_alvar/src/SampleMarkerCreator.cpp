@@ -280,12 +280,12 @@ int main(int argc, char* argv[])
                   << st.units / 96.0 << " inches" << std::endl;
         std::cout << "  marker side: " << st.marker_side_len << " units"
                   << std::endl;
-        bool loop = true;
+
         std::string s;
         int marker_id = 0;
         double posx = 0.0, posy = 0.0;
         bool vert = false;
-        while (loop)
+        while (true)
         {
           std::cout << "  marker id (use -1 to end) [" << marker_id << "]: ";
           std::flush(std::cout);

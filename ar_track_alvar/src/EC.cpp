@@ -87,7 +87,7 @@ bool CameraEC::UpdatePose(const cv::Mat* object_points, cv::Mat* image_points, c
 	pparams.object_model  = object_points;
 
 	alvar::Optimization *opt = new alvar::Optimization(6, image_points->height);
-	double tmp = opt->Optimize(&par, image_points, 0.0005, 2, Project, &pparams, alvar::Optimization::TUKEY_LM, 0, 0, weights);
+	opt->Optimize(&par, image_points, 0.0005, 2, Project, &pparams, alvar::Optimization::TUKEY_LM, 0, 0, weights);
 
 	memcpy(rot->data.db, &(par.data.db[0+0]), 3*sizeof(double));
 	memcpy(tra->data.db, &(par.data.db[0+3]), 3*sizeof(double));
@@ -117,7 +117,7 @@ bool CameraEC::UpdateRotation(const cv::Mat* object_points, cv::Mat* image_point
 	pparams.camera = this;
 	pparams.object_model  = object_points;
 	alvar::Optimization *opt = new alvar::Optimization(3, image_points->height);
-	double tmp = opt->Optimize(&par, image_points, 0.0005, 2, ProjectRot, &pparams, alvar::Optimization::TUKEY_LM);
+	opt->Optimize(&par, image_points, 0.0005, 2, ProjectRot, &pparams, alvar::Optimization::TUKEY_LM);
 	memcpy(rot->data.db, &(par.data.db[0+0]), 3*sizeof(double));
 	delete opt;
 	return true;
@@ -235,10 +235,10 @@ void CameraEC::Get3dOnPlane(const Pose *pose, CvPoint2D32f p2d, CvPoint3D32f &p3
 	// Apply H to get the 3D coordinates
 	Camera::Undistort(p2d);
 	double xd[3] = {p2d.x, p2d.y, 1};
-	cv::Mat X = cv::Mat(3, 1, CV_64F, xd);
-	X = Ki * X;
+	//cv::Mat X = cv::Mat(3, 1, CV_64F, xd);
+	//X = Ki * X;
 	cvInv(&H, &H);
-	X = H * X;
+	//X = H * X;
 
 	p3d.x = (float)(xd[0] / xd[2]);
 	p3d.y = (float)(xd[1] / xd[2]);
@@ -263,11 +263,11 @@ void CameraEC::Get3dOnDepth(const Pose *pose, CvPoint2D32f p2d, float depth, CvP
 	p.Invert();
 	
 	double Xd[4] = {wx, wy, wz, 1};
-	cv::Mat Xdm = cv::Mat(4, 1, CV_64F, Xd);
+	//cv::Mat Xdm = cv::Mat(4, 1, CV_64F, Xd);
 	double Pd[16];
 	cv::Mat Pdm = cv::Mat(4, 4, CV_64F, Pd);
 	p.GetMatrix(&Pdm);
-	Xdm = Pdm * Xdm;
+	//Xdm = Pdm * Xdm;
 	p3d.x = float(Xd[0]/Xd[3]);
 	p3d.y = float(Xd[1]/Xd[3]);
 	p3d.z = float(Xd[2]/Xd[3]);

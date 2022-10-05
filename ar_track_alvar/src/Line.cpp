@@ -67,7 +67,6 @@ int FitLines(vector<Line>& lines, const vector<int>& corners,
       len = size - start + end + 1;
 
     int ind;
-    double* data = new double[2 * len];
 
     // OpenCV routine...
     cv::Mat line_data = cv::Mat(1, len, CV_32FC2);
@@ -86,7 +85,6 @@ int FitLines(vector<Line>& lines, const vector<int>& corners,
     cv::fitLine(line_data, line, cv::DIST_L2, 0, 0.01, 0.01);
     lines.push_back(Line(line));
 
-    delete[] data;
     line_data.release();
   }
 

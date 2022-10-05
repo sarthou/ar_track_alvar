@@ -53,7 +53,7 @@ double FilterAverage::next(double y) {
 	} else {
 		push_to_buffer(y);
 		double sum = 0;
-		for (deque<double>::iterator iter = buffer.begin(); iter != buffer.end(); iter++) {
+		for (deque<double>::iterator iter = buffer.begin(); iter != buffer.end(); ++iter) {
 			sum += (double)*iter;
 		}
 		return (value=sum/buffer.size());
@@ -67,7 +67,7 @@ void FilterAverage::reset() {
 double FilterAverage::deviation() const {
 	double sum = 0;
 	if (buffer.size() == 0) return 0;
-	for (deque<double>::const_iterator iter = buffer.begin(); iter != buffer.end(); iter++) {
+	for (deque<double>::const_iterator iter = buffer.begin(); iter != buffer.end(); ++iter) {
 		double val = ((double)*iter)-value;
 		sum += (val*val);
 	}

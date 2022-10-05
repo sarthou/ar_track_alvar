@@ -64,7 +64,7 @@ bool TrackerOrientation::UpdatePose(IplImage *image)
 
 	//map<int,Feature>::iterator it;
 	int ind = 0;
-	for(map<int,Feature>::iterator it=_F_v.begin(); it!=_F_v.end(); it++)	
+	for(map<int,Feature>::iterator it=_F_v.begin(); it!=_F_v.end(); ++it)	
 	{
 		if((it->second.status3D  == Feature::USE_FOR_POSE || 
 			it->second.status3D  == Feature::IS_INITIAL)  && 
