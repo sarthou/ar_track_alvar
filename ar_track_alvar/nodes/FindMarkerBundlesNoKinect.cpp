@@ -84,7 +84,7 @@ int n_bundles = 0;
 
 void GetMultiMarkerPoses(cv::Mat& image, double m_size);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
-void makeMarkerMsgs(int type, int id, Pose &p, sensor_msgs::ImageConstPtr image_msg, tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size);
+void makeMarkerMsgs(int type, int id, const Pose &p, sensor_msgs::ImageConstPtr image_msg, const tf::StampedTransform &CamToOutput, visualization_msgs::Marker *rvizMarker, ar_track_alvar_msgs::AlvarMarker *ar_pose_marker, double m_size);
 
 
 // Updates the bundlePoses of the multi_marker_bundles by detecting markers and using all markers in a bundle to infer the master tag's position
