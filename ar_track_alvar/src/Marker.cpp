@@ -415,35 +415,34 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	marker_corners_img.resize(4);
 
 	// Same order as the detected corners
-	marker_corners.clear();
-	marker_corners.push_back(PointDouble(x_min, y_min));
-	marker_corners.push_back(PointDouble(x_max, y_min));
-	marker_corners.push_back(PointDouble(x_max, y_max));
-	marker_corners.push_back(PointDouble(x_min, y_max));
+	marker_corners = {PointDouble(x_min, y_min),
+					  PointDouble(x_max, y_min),
+					  PointDouble(x_max, y_max),
+					  PointDouble(x_min, y_max)};
 
 	// Rest can be done only if we have existing resolution
 	if (res <= 0) return;
 
 	// marker_points
 	marker_points.clear();
-	for(int j = 0; j < res; ++j) {
-		for(int i = 0; i < res; ++i) {
-			PointDouble pt;
-			pt.y = cy_max - (step*j) - (step/2);
-			pt.x = cx_min + (step*i) + (step/2);
-			marker_points.push_back(pt);
-		}
-	}
+	marker_points.reserve(res*res);
+	for(int j = 0; j < res; ++j)
+		for(int i = 0; i < res; ++i)
+			marker_points.emplace_back(cx_min + (step*i) + (step/2), cy_max - (step*j) - (step/2));
 
 	// Samples to be used in margins
 	// TODO: Now this works only if the "margin" is without decimals
 	// TODO: This should be made a lot cleaner
 	marker_margin_w.clear();
+	marker_margin_w.reserve(res + margin);
 	marker_margin_b.clear();
-	for(int j = -1; j<=margin-1; j++) {
-		PointDouble pt;
+	marker_margin_b.reserve((margin-1) * (res + margin-1));
+	for(int j = -1; j<=margin-1; j++)
+	{
+		PointDouble  pt;
 		// Sides
-		for (int i=0; i<res; i++) {
+		for (int i=0; i<res; i++)
+		{
 			pt.x = cx_min + step*i + step/2;
 			pt.y = y_min + step*j + step/2;
 			if (j < 0) marker_margin_w.push_back(pt);
@@ -459,31 +458,37 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 			if (j < 0) marker_margin_w.push_back(pt);
 			else marker_margin_b.push_back(pt);
 		}
+
+		double pty_min = y_min + step*j + step/2;
+		double pty_max = y_max - step*j - step/2;
 		// Corners
-		for(int i = -1; i<=margin-1; i++) {
-			pt.x = x_min + step*i + step/2;
-			pt.y = y_min + step*j + step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_min + step*i + step/2;
-			pt.y = y_max - step*j - step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_max - step*i - step/2;
-			pt.y = y_max - step*j - step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_max - step*i - step/2;
-			pt.y = y_min + step*j + step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
+		for(int i = -1; i<=margin-1; i++)
+		{
+			double ptx_min = x_min + step*i + step/2;
+			double ptx_max = x_max - step*i - step/2;
+
+			if ((j < 0) || (i < 0))
+			{
+				marker_margin_w.emplace_back(ptx_min, pty_min);
+				marker_margin_w.emplace_back(ptx_min, pty_max);
+				marker_margin_w.emplace_back(ptx_max, pty_max);
+				marker_margin_w.emplace_back(ptx_max, pty_min);
+			}
+			else
+			{
+				marker_margin_b.emplace_back(ptx_min, pty_min);
+				marker_margin_b.emplace_back(ptx_min, pty_max);
+				marker_margin_b.emplace_back(ptx_max, pty_max);
+				marker_margin_b.emplace_back(ptx_max, pty_min);
+			}
 		}
 	}
 
 	// marker content
-	if (!marker_content.empty())
-		marker_content.release();
-	marker_content = cv::Mat(res, res, CV_8U, cv::Scalar(255));
+	if (marker_content)
+		cvReleaseMat(&marker_content);
+	marker_content = cvCreateMat(res, res, CV_8U);
+	cvSet(marker_content, cvScalar(255));
 }
 
 Marker::~Marker()
