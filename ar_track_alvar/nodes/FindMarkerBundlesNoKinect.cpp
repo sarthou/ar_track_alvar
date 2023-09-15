@@ -382,11 +382,14 @@ int main(int argc, char *argv[])
     }
   }
 
+  std::cout << markers_size.size() << " marker sizes will be considered: ";
   for(auto& marker_size : markers_size)
   {
     marker_detectors.push_back(new MarkerDetector<MarkerData>());
     marker_detectors.back()->SetMarkerSize(marker_size);
+    std::cout << marker_size << " ";
   }
+  std::cout << std::endl;
 
   // Set up camera, listeners, and broadcasters
   cam = new Camera(n, cam_info_topic);
