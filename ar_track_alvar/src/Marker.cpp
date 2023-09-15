@@ -230,6 +230,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 	cam->Distort(marker_points_img);
 
 	ros_marker_points_img.clear();
+	ros_marker_points_img.reserve(marker_content.rows * marker_content.cols);
 
     // Read the content
     int x, y;
@@ -243,7 +244,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 
 			marker_points_img[(j*marker_content.cols)+i].val = (int)gray.at<uchar>(y, x);
 
-			ros_marker_points_img.push_back(PointDouble(x,y));
+			ros_marker_points_img.emplace_back(x,y);
 
 			/*
 			// Use median of 5 neighbor pixels
@@ -290,7 +291,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 		y = (int)(0.5 + Limit(marker_margin_b_img[i].y, 0, gray.rows-1));
 		marker_margin_b_img[i].val = (int)gray.at<uchar>(y, x);
 		min += marker_margin_b_img[i].val;
-        ros_marker_points_img.push_back(PointDouble(x,y));
+        ros_marker_points_img.emplace_back(x,y);
 	}
 	max /= marker_margin_w_img.size();
 	min /= marker_margin_b_img.size();
@@ -485,10 +486,9 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	}
 
 	// marker content
-	if (marker_content)
-		cvReleaseMat(&marker_content);
-	marker_content = cvCreateMat(res, res, CV_8U);
-	cvSet(marker_content, cvScalar(255));
+	if (!marker_content.empty())
+		marker_content.release();
+	marker_content = cv::Mat(res, res, CV_8U, cv::Scalar(255));
 }
 
 Marker::~Marker()
@@ -658,14 +658,13 @@ bool MarkerData::DetectResolution(vector<PointDouble> &_marker_corners_img, cv::
 	copy(_marker_corners_img.begin(), _marker_corners_img.end(), marker_corners_img_undist.begin());
 
 	// line_points
-	std::vector<PointDouble> line_points;
-	PointDouble pt;
-	line_points.clear();
-	pt.x=0; pt.y=0; line_points.push_back(pt);
-	pt.x=-0.5*edge_length; pt.y=0; line_points.push_back(pt);
-	pt.x=+0.5*edge_length; pt.y=0; line_points.push_back(pt);
-	pt.x=0; pt.y=-0.5*edge_length; line_points.push_back(pt);
-	pt.x=0; pt.y=+0.5*edge_length; line_points.push_back(pt);
+	std::vector<PointDouble> line_points = {
+		PointDouble(0.,0.),
+		PointDouble(-0.5*edge_length, 0.),
+		PointDouble(+0.5*edge_length, 0.),
+		PointDouble(0., -0.5*edge_length),
+		PointDouble(0., +0.5*edge_length)
+	};
 
 	// Figure out the marker point position in the image
 	// TODO: Note that line iterator cannot iterate outside image
@@ -673,7 +672,6 @@ bool MarkerData::DetectResolution(vector<PointDouble> &_marker_corners_img, cv::
 	//       Right way would be to iterate undistorted lines and distort line points.
 	Homography H;
 	vector<PointDouble> line_points_img(line_points.size());
-	line_points_img.resize(line_points.size());
 	cam->Undistort(marker_corners_img_undist);
 	H.Find(marker_corners, marker_corners_img_undist);
 	H.ProjectPoints(line_points, line_points_img);
