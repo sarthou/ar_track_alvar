@@ -98,7 +98,7 @@ public:
    * \brief Labels image and filters blobs to obtain square-shaped objects from
    * the scene.
    */
-  virtual void LabelSquares(cv::Mat& image, bool visualize = false) = 0;
+  virtual void LabelSquares(const cv::Mat& image, bool visualize = false) = 0;
 
   bool CheckBorder(const std::vector<cv::Point>& contour, int width,
                    int height);
@@ -135,9 +135,9 @@ public:
    * the scene. visualize parameter controls whether or not to draw the detected 
    * borders of the marker
    */
-  void LabelSquares(cv::Mat& image, bool visualize = false);
+  void LabelSquares(const cv::Mat& image, bool visualize = false);
 
-  std::vector<std::vector<cv::Point>> LabelImage(cv::Mat& image, int min_size,
+  std::vector<std::vector<cv::Point>> LabelImage(const cv::Mat& image, int min_size,
                                                  bool approx = false);
 };
 

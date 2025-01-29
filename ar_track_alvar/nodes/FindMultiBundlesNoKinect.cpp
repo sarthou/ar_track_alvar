@@ -56,7 +56,6 @@ using namespace alvar;
 using namespace std;
 
 Camera *cam;
-cv_bridge::CvImagePtr cv_ptr_;
 image_transport::Subscriber cam_sub_;
 
 ros::Publisher arMarkerPub_;
@@ -72,7 +71,7 @@ std::vector<SizedMarkerDetector*> marker_detectors;
 
 std::string output_frame;
 
-void processMarkerDetector(SizedMarkerDetector* marker_detector, cv::Mat& ipl_image, Camera* cam, const std_msgs::Header& header, 
+void processMarkerDetector(SizedMarkerDetector* marker_detector, const cv::Mat& ipl_image, Camera* cam, const std_msgs::Header& header, 
                            const std::string& output_frame, const tf::StampedTransform& cam_to_output)
 {
   marker_detector->GetMultiMarkerPoses(ipl_image, cam);
@@ -104,20 +103,20 @@ void getCapCallback (const sensor_msgs::ImageConstPtr& image_msg)
       arPoseVisibleMarkers_.markers.clear();
 
       //Convert the image
-      cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
+      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(image_msg, sensor_msgs::image_encodings::BGR8);
 
       //Get the estimated pose of the main markers by using all the markers in each bundle
 
       // GetMultiMarkersPoses expects an IplImage*, but as of ros groovy, cv_bridge gives
       // us a cv::Mat. I'm too lazy to change to cv::Mat throughout right now, so I
       // do this conversion here -jbinney
-      cv::Mat ipl_image = cv_ptr_->image;
+      //cv::Mat ipl_image = cv_ptr->image;
 
       std::vector<std::thread> threads;
       for (auto* marker_detector : marker_detectors)
       {
         threads.emplace_back(processMarkerDetector, 
-                  marker_detector, std::ref(ipl_image), std::ref(cam),
+                  marker_detector, std::cref(cv_ptr->image), std::ref(cam),
                   std::cref(image_msg->header), std::cref(output_frame), std::cref(cam_to_output));
       }
 

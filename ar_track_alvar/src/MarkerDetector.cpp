@@ -75,7 +75,7 @@ namespace alvar {
 		detect_pose_grayscale = _detect_pose_grayscale;
 	}
 
-	int MarkerDetectorImpl::Detect(cv::Mat& image,
+	int MarkerDetectorImpl::Detect(const cv::Mat& image,
 			   Camera *cam,
 			   bool track,
 			   bool visualize,
@@ -132,7 +132,8 @@ namespace alvar {
 					mn->UpdatePose(blob_corners[track_i], cam, track_orientation, update_pose);
 					_markers_push_back(mn);
 					blob_corners[track_i].clear(); // We don't want to handle this again...
-					if (visualize) mn->Visualize(image, cam, CV_RGB(255,255,0));
+					// if (visualize)
+					// 	mn->Visualize(image, cam, CV_RGB(255,255,0));
 				}
 			}
 		}
@@ -155,7 +156,8 @@ namespace alvar {
                 mn->ros_orientation = orientation;
 				_markers_push_back(mn);
  
-				if (visualize) mn->Visualize(image, cam, CV_RGB(255,0,0));
+				//if (visualize)
+				//	mn->Visualize(image, cam, CV_RGB(255,0,0));
 			}
 
 			delete mn;
@@ -164,7 +166,7 @@ namespace alvar {
 		return (int) _markers_size();
 	}
 
-	int MarkerDetectorImpl::DetectAdditional(cv::Mat& image, Camera *cam, bool visualize, double max_track_error)
+	int MarkerDetectorImpl::DetectAdditional(const cv::Mat& image, Camera *cam, bool visualize, double max_track_error)
 	{
 		if(!labeling) return -1;
 		double error=-1;
@@ -196,9 +198,8 @@ namespace alvar {
 				count++;
 				blob_corners[track_i].clear(); // We don't want to handle this again...
 
-				if (visualize) {
-					mn->Visualize(image, cam, CV_RGB(0,255,255));
-				}
+				//if (visualize)
+				//	mn->Visualize(image, cam, CV_RGB(0,255,255));
 			}
 		}
 		return count;

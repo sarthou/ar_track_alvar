@@ -121,7 +121,7 @@ public:
 	 * - The marker points are read from inside the margins starting from top-left
 	 *   and reading the bits first left-to-right one line at a time.
 	 */
-	int Detect(cv::Mat& image,
+	int Detect(const cv::Mat& image,
 			   Camera *cam,
 			   bool track=false,
 			   bool visualize=false,
@@ -130,7 +130,7 @@ public:
 			   LabelingMethod labeling_method=CVSEQ,
 			   bool update_pose=true);
 
-	int DetectAdditional(cv::Mat& image, Camera *cam, bool visualize=false, double max_track_error=0.2);
+	int DetectAdditional(const cv::Mat& image, Camera *cam, bool visualize=false, double max_track_error=0.2);
 };
 
 /**

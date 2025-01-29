@@ -25,7 +25,7 @@ namespace alvar {
     }
   }
 
-  void SizedMarkerDetector::GetMultiMarkerPoses(cv::Mat& image, Camera *cam)
+  void SizedMarkerDetector::GetMultiMarkerPoses(const cv::Mat& image, Camera *cam)
   {
     if (detector_.Detect(image, cam, true, false, SizedMarkerDetector::max_new_marker_error, SizedMarkerDetector::max_track_error, CVSEQ, true))
     {

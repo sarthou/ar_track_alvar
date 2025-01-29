@@ -71,7 +71,7 @@ void LabelingCvSeq::SetOptions(bool _detect_pose_grayscale)
   detect_pose_grayscale = _detect_pose_grayscale;
 }
 
-void LabelingCvSeq::LabelSquares(cv::Mat& image, bool visualize)
+void LabelingCvSeq::LabelSquares(const cv::Mat& image, bool visualize)
 {
   if (!gray.empty() && ((gray.cols != image.cols) || (gray.rows != image.rows)))
   {
@@ -192,8 +192,8 @@ void LabelingCvSeq::LabelSquares(cv::Mat& image, bool visualize)
       // cvFitLine(line_data, CV_DIST_L2, 0, 0.01, 0.01, params);
       ////cvFitLine(line_data, CV_DIST_HUBER, 0, 0.01, 0.01, params);
       Line line = Line(params);
-      if (visualize)
-        DrawLine(image, line);
+      //if (visualize)
+      //  DrawLine(image, line);
       fitted_lines[j] = line;
 
       line_data.release();
@@ -228,29 +228,29 @@ void LabelingCvSeq::LabelSquares(cv::Mat& image, bool visualize)
       */
       blob_corners[i][j] = intc;
     }
-    if (visualize)
-    {
-      for (size_t j = 0; j < 4; ++j)
-      {
-        PointDouble& intc = blob_corners[i][j];
-        if (j == 0)
-          cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
-                     CV_RGB(255, 255, 255));
-        if (j == 1)
-          cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
-                     CV_RGB(255, 0, 0));
-        if (j == 2)
-          cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
-                     CV_RGB(0, 255, 0));
-        if (j == 3)
-          cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
-                     CV_RGB(0, 0, 255));
-      }
-    }
+    //if (visualize)
+    //{
+    //  for (size_t j = 0; j < 4; ++j)
+    //  {
+    //    PointDouble& intc = blob_corners[i][j];
+    //    if (j == 0)
+    //      cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
+    //                 CV_RGB(255, 255, 255));
+    //    if (j == 1)
+    //      cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
+    //                 CV_RGB(255, 0, 0));
+    //    if (j == 2)
+    //      cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
+    //                 CV_RGB(0, 255, 0));
+    //    if (j == 3)
+    //      cv::circle(image, cv::Point(int(intc.x), int(intc.y)), 5,
+    //                 CV_RGB(0, 0, 255));
+    //  }
+    //}
   }
 }
 
-std::vector<std::vector<cv::Point>> LabelingCvSeq::LabelImage(cv::Mat& image,
+std::vector<std::vector<cv::Point>> LabelingCvSeq::LabelImage(const cv::Mat& image,
                                                               int min_size,
                                                               bool approx)
 {

@@ -27,7 +27,7 @@ public:
 
   void setBundles(const std::vector<MultiMarkerBundle>& bundles, const std::vector<int>& master_ids);
 
-  void GetMultiMarkerPoses(cv::Mat& image, Camera *cam);
+  void GetMultiMarkerPoses(const cv::Mat& image, Camera *cam);
 
   int getMainId(int marker_id);
   void computeSeenMarkers();

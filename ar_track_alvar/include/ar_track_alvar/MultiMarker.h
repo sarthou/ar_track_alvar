@@ -76,7 +76,7 @@ public:
 		return _GetPose(begin, end, cam, pose, empty_img);
 	}
 
-	int _SetTrackMarkers(MarkerDetectorImpl &marker_detector, Camera* cam, Pose& pose, cv::Mat& image);
+	int _SetTrackMarkers(MarkerDetectorImpl &marker_detector, Camera* cam, Pose& pose, const cv::Mat& image);
 	int master_id;  //The id of the first marker specified in the XML file
 
 
@@ -229,7 +229,7 @@ public:
 	 * also these markers.
 	*/
 	template <class M>
-	int SetTrackMarkers(MarkerDetector<M> &marker_detector, Camera* cam, Pose& pose, cv::Mat& image) {
+	int SetTrackMarkers(MarkerDetector<M> &marker_detector, Camera* cam, Pose& pose, const cv::Mat& image) {
     return _SetTrackMarkers(marker_detector, cam, pose, image);
 	}
 };

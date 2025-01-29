@@ -385,7 +385,7 @@ double MultiMarker::_GetPose(MarkerIterator &begin, MarkerIterator &end, Camera*
 }
 
 
-int MultiMarker::_SetTrackMarkers(MarkerDetectorImpl &marker_detector, Camera* cam, Pose& pose, cv::Mat& image) {
+int MultiMarker::_SetTrackMarkers(MarkerDetectorImpl &marker_detector, Camera* cam, Pose& pose, const cv::Mat& image) {
 	int count=0;
 	marker_detector.TrackMarkersReset();
 	for(size_t i = 0; i < marker_indices.size(); ++i) {
@@ -408,13 +408,13 @@ int MultiMarker::_SetTrackMarkers(MarkerDetectorImpl &marker_detector, Camera* c
 			p[2].y = pi[2].y;
 			p[3].x = pi[3].x;
 			p[3].y = pi[3].y;
-			if (!image.empty())
+			/*if (!image.empty())
 			{
 				cv::line(image, cv::Point(int(p[0].x), int(p[0].y)), cv::Point(int(p[1].x), int(p[1].y)), CV_RGB(255,0,0));
 				cv::line(image, cv::Point(int(p[1].x), int(p[1].y)), cv::Point(int(p[2].x), int(p[2].y)), CV_RGB(255,0,0));
 				cv::line(image, cv::Point(int(p[2].x), int(p[2].y)), cv::Point(int(p[3].x), int(p[3].y)), CV_RGB(255,0,0));
 				cv::line(image, cv::Point(int(p[3].x), int(p[3].y)), cv::Point(int(p[0].x), int(p[0].y)), CV_RGB(255,0,0));
-			}
+			}*/
 			marker_detector.TrackMarkerAdd(id, p);
 			count++;
 		}
