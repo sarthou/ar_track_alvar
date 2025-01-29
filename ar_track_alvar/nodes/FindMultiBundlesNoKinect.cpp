@@ -149,8 +149,8 @@ void getCapCallback (const sensor_msgs::ImageConstPtr& image_msg)
       }
 
       //Publish the marker messages
-      arPoseMarkers_.header.stamp = image_msg->header.stamp;
-      arPoseVisibleMarkers_.header.stamp = image_msg->header.stamp;
+      arPoseMarkers_.header = image_msg->header;
+      arPoseVisibleMarkers_.header = image_msg->header;
       arMarkerPub_.publish (arPoseMarkers_);
       arVisibleMarkerPub_.publish (arPoseVisibleMarkers_);
     }
