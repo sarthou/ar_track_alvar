@@ -226,9 +226,9 @@ int main(int argc, char *argv[])
   cam = new Camera(n, cam_info_topic);
   tf_listener = new tf::TransformListener(n);
   tf_broadcaster = new tf::TransformBroadcaster();
-  arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
-  arVisibleMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarVisibleMarkers > ("ar_pose_visible_marker", 0);
-  rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);
+  arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 100);
+  arVisibleMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarVisibleMarkers > ("ar_pose_visible_marker", 100);
+  rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 100);
 
   //Give tf a chance to catch up before the camera callback starts asking for transforms
   ros::Duration(1.0).sleep();
