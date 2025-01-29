@@ -230,6 +230,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 	cam->Distort(marker_points_img);
 
 	ros_marker_points_img.clear();
+	ros_marker_points_img.reserve(marker_content.rows * marker_content.cols);
 
     // Read the content
     int x, y;
@@ -243,7 +244,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 
 			marker_points_img[(j*marker_content.cols)+i].val = (int)gray.at<uchar>(y, x);
 
-			ros_marker_points_img.push_back(PointDouble(x,y));
+			ros_marker_points_img.emplace_back(x,y);
 
 			/*
 			// Use median of 5 neighbor pixels
@@ -290,7 +291,7 @@ bool Marker::UpdateContentBasic(vector<PointDouble> &_marker_corners_img, cv::Ma
 		y = (int)(0.5 + Limit(marker_margin_b_img[i].y, 0, gray.rows-1));
 		marker_margin_b_img[i].val = (int)gray.at<uchar>(y, x);
 		min += marker_margin_b_img[i].val;
-        ros_marker_points_img.push_back(PointDouble(x,y));
+        ros_marker_points_img.emplace_back(x,y);
 	}
 	max /= marker_margin_w_img.size();
 	min /= marker_margin_b_img.size();
@@ -415,35 +416,34 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 	marker_corners_img.resize(4);
 
 	// Same order as the detected corners
-	marker_corners.clear();
-	marker_corners.push_back(PointDouble(x_min, y_min));
-	marker_corners.push_back(PointDouble(x_max, y_min));
-	marker_corners.push_back(PointDouble(x_max, y_max));
-	marker_corners.push_back(PointDouble(x_min, y_max));
+	marker_corners = {PointDouble(x_min, y_min),
+					  PointDouble(x_max, y_min),
+					  PointDouble(x_max, y_max),
+					  PointDouble(x_min, y_max)};
 
 	// Rest can be done only if we have existing resolution
 	if (res <= 0) return;
 
 	// marker_points
 	marker_points.clear();
-	for(int j = 0; j < res; ++j) {
-		for(int i = 0; i < res; ++i) {
-			PointDouble pt;
-			pt.y = cy_max - (step*j) - (step/2);
-			pt.x = cx_min + (step*i) + (step/2);
-			marker_points.push_back(pt);
-		}
-	}
+	marker_points.reserve(res*res);
+	for(int j = 0; j < res; ++j)
+		for(int i = 0; i < res; ++i)
+			marker_points.emplace_back(cx_min + (step*i) + (step/2), cy_max - (step*j) - (step/2));
 
 	// Samples to be used in margins
 	// TODO: Now this works only if the "margin" is without decimals
 	// TODO: This should be made a lot cleaner
 	marker_margin_w.clear();
+	marker_margin_w.reserve(res + margin);
 	marker_margin_b.clear();
-	for(int j = -1; j<=margin-1; j++) {
-		PointDouble pt;
+	marker_margin_b.reserve((margin-1) * (res + margin-1));
+	for(int j = -1; j<=margin-1; j++)
+	{
+		PointDouble  pt;
 		// Sides
-		for (int i=0; i<res; i++) {
+		for (int i=0; i<res; i++)
+		{
 			pt.x = cx_min + step*i + step/2;
 			pt.y = y_min + step*j + step/2;
 			if (j < 0) marker_margin_w.push_back(pt);
@@ -459,24 +459,29 @@ void Marker::SetMarkerSize(double _edge_length, int _res, double _margin) {
 			if (j < 0) marker_margin_w.push_back(pt);
 			else marker_margin_b.push_back(pt);
 		}
+
+		double pty_min = y_min + step*j + step/2;
+		double pty_max = y_max - step*j - step/2;
 		// Corners
-		for(int i = -1; i<=margin-1; i++) {
-			pt.x = x_min + step*i + step/2;
-			pt.y = y_min + step*j + step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_min + step*i + step/2;
-			pt.y = y_max - step*j - step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_max - step*i - step/2;
-			pt.y = y_max - step*j - step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
-			pt.x = x_max - step*i - step/2;
-			pt.y = y_min + step*j + step/2;
-			if ((j < 0) || (i < 0)) marker_margin_w.push_back(pt);
-			else marker_margin_b.push_back(pt);
+		for(int i = -1; i<=margin-1; i++)
+		{
+			double ptx_min = x_min + step*i + step/2;
+			double ptx_max = x_max - step*i - step/2;
+
+			if ((j < 0) || (i < 0))
+			{
+				marker_margin_w.emplace_back(ptx_min, pty_min);
+				marker_margin_w.emplace_back(ptx_min, pty_max);
+				marker_margin_w.emplace_back(ptx_max, pty_max);
+				marker_margin_w.emplace_back(ptx_max, pty_min);
+			}
+			else
+			{
+				marker_margin_b.emplace_back(ptx_min, pty_min);
+				marker_margin_b.emplace_back(ptx_min, pty_max);
+				marker_margin_b.emplace_back(ptx_max, pty_max);
+				marker_margin_b.emplace_back(ptx_max, pty_min);
+			}
 		}
 	}
 
@@ -653,14 +658,13 @@ bool MarkerData::DetectResolution(vector<PointDouble> &_marker_corners_img, cv::
 	copy(_marker_corners_img.begin(), _marker_corners_img.end(), marker_corners_img_undist.begin());
 
 	// line_points
-	std::vector<PointDouble> line_points;
-	PointDouble pt;
-	line_points.clear();
-	pt.x=0; pt.y=0; line_points.push_back(pt);
-	pt.x=-0.5*edge_length; pt.y=0; line_points.push_back(pt);
-	pt.x=+0.5*edge_length; pt.y=0; line_points.push_back(pt);
-	pt.x=0; pt.y=-0.5*edge_length; line_points.push_back(pt);
-	pt.x=0; pt.y=+0.5*edge_length; line_points.push_back(pt);
+	std::vector<PointDouble> line_points = {
+		PointDouble(0.,0.),
+		PointDouble(-0.5*edge_length, 0.),
+		PointDouble(+0.5*edge_length, 0.),
+		PointDouble(0., -0.5*edge_length),
+		PointDouble(0., +0.5*edge_length)
+	};
 
 	// Figure out the marker point position in the image
 	// TODO: Note that line iterator cannot iterate outside image
@@ -668,7 +672,6 @@ bool MarkerData::DetectResolution(vector<PointDouble> &_marker_corners_img, cv::
 	//       Right way would be to iterate undistorted lines and distort line points.
 	Homography H;
 	vector<PointDouble> line_points_img(line_points.size());
-	line_points_img.resize(line_points.size());
 	cam->Undistort(marker_corners_img_undist);
 	H.Find(marker_corners, marker_corners_img_undist);
 	H.ProjectPoints(line_points, line_points_img);
