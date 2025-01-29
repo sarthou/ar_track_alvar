@@ -85,6 +85,7 @@ add_library(ar_track_alvar
     src/Pose.cpp
     src/Marker.cpp
     src/MarkerDetector.cpp
+    src/SizedMarkerDetector.cpp
     src/Bitset.cpp
     src/Rotation.cpp
     src/CvTestbed.cpp
@@ -145,6 +146,10 @@ add_dependencies(findMarkerBundles ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 add_executable(findMarkerBundlesNoKinect nodes/FindMarkerBundlesNoKinect.cpp)
 target_link_libraries(findMarkerBundlesNoKinect ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(findMarkerBundlesNoKinect ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
+
+add_executable(findMultiBundlesNoKinect nodes/FindMultiBundlesNoKinect.cpp)
+target_link_libraries(findMultiBundlesNoKinect ar_track_alvar ${catkin_LIBRARIES})
+add_dependencies(findMultiBundlesNoKinect ${PROJECT_NAME}_gencpp ${GENCPP_DEPS})
 
 add_executable(createMarker src/SampleMarkerCreator.cpp)
 target_link_libraries(createMarker ar_track_alvar ${catkin_LIBRARIES})
